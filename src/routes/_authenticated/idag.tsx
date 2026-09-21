@@ -326,8 +326,33 @@ function TodayPage() {
         </Section>
       ) : null}
 
+      {klaraTasks.length + klaraRoutines.length > 0 ? (
+        <section className="mt-6">
+          <button
+            type="button"
+            onClick={() => setShowDone(!showDone)}
+            className="flex min-h-11 w-full items-center justify-between px-1"
+          >
+            <span className="text-xs font-bold tracking-[0.12em] text-muted-foreground uppercase">
+              Klart idag ({klaraTasks.length + klaraRoutines.length})
+            </span>
+            <ChevronDown className={cn("size-5 text-muted-foreground transition-transform", showDone && "rotate-180")} />
+          </button>
+          {showDone ? (
+            <div className="mt-2 space-y-2">
+              {klaraRoutines.map((r: any) => (
+                <RoutineCard key={r.id} r={r} />
+              ))}
+              {klaraTasks.map((t: any) => (
+                <CheckRow key={t.id} title={t.title} done onToggle={() => onToggleTask(t)} onOpen={() => setSheetId(t.id)} />
+              ))}
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
       {missade.length > 0 ? (
-        <Section title="Missat" count={missade.length}>
+        <Section title="Försenat" count={missade.length}>
           {missade.map((t: any) => (
             <CheckRow
               key={t.id}
@@ -358,31 +383,6 @@ function TodayPage() {
             />
           ))}
         </Section>
-      ) : null}
-
-      {klaraTasks.length + klaraRoutines.length > 0 ? (
-        <section className="mt-6">
-          <button
-            type="button"
-            onClick={() => setShowDone(!showDone)}
-            className="flex min-h-11 w-full items-center justify-between px-1"
-          >
-            <span className="text-xs font-bold tracking-[0.12em] text-muted-foreground uppercase">
-              Klart idag ({klaraTasks.length + klaraRoutines.length})
-            </span>
-            <ChevronDown className={cn("size-5 text-muted-foreground transition-transform", showDone && "rotate-180")} />
-          </button>
-          {showDone ? (
-            <div className="mt-2 space-y-2">
-              {klaraRoutines.map((r: any) => (
-                <RoutineCard key={r.id} r={r} />
-              ))}
-              {klaraTasks.map((t: any) => (
-                <CheckRow key={t.id} title={t.title} done onToggle={() => onToggleTask(t)} onOpen={() => setSheetId(t.id)} />
-              ))}
-            </div>
-          ) : null}
-        </section>
       ) : null}
 
       <TaskSheet
