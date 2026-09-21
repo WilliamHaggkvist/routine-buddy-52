@@ -275,8 +275,9 @@ function MePage() {
       <div className="mt-4 flex items-start gap-2 rounded-2xl bg-warm/50 px-4 py-3 text-xs text-warm-foreground">
         {s?.push_enabled ? <Bell className="mt-0.5 size-4 shrink-0" /> : <BellOff className="mt-0.5 size-4 shrink-0" />}
         <p>
-          Notiser skickas medan Dagsform är öppen eller sparad på hemskärmen. Vill du ha dem även när appen är helt
-          stängd, och mail som kommer säkert, säg till – då kopplar vi på utskick i bakgrunden.
+          {s?.push_enabled
+            ? "Notiser skickas till den här enheten även när appen är stängd. Slå på notiser igen på varje telefon eller dator du vill få dem på."
+            : "Slå på notiser för att få påminnelser i telefonen även när appen är stängd. På iPhone måste du först spara Dagsform på hemskärmen."}
         </p>
       </div>
 
