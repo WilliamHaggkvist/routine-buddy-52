@@ -42,3 +42,32 @@ export function isSoon(due: string | null, now: Date = new Date()): boolean {
   const nowMins = now.getHours() * 60 + now.getMinutes();
   return mins <= nowMins + 90;
 }
+
+export function addDays(day: string, n: number): string {
+  const d = new Date(`${day}T12:00:00`);
+  d.setDate(d.getDate() + n);
+  return todayKey(d);
+}
+
+export function tomorrowKey(day: string = todayKey()): string {
+  return addDays(day, 1);
+}
+
+const MONTHS = ["jan", "feb", "mars", "april", "maj", "juni", "juli", "aug", "sep", "okt", "nov", "dec"];
+
+/** Läsbart datum, t.ex. "Idag", "Imorgon", "Tis 23 sep" */
+export function humanDate(dateKey: string | null | undefined, today: string = todayKey()): string | null {
+  if (!dateKey) return null;
+  if (dateKey === today) return "Idag";
+  if (dateKey === addDays(today, 1)) return "Imorgon";
+  if (dateKey === addDays(today, -1)) return "Igår";
+  const d = new Date(`${dateKey}T12:00:00`);
+  return `${WEEKDAY_LABELS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+}
+
+export function recurrenceLabel(recurrence: string, days: number[] | null | undefined): string | null {
+  if (recurrence === "daily") return "Varje dag";
+  if (recurrence === "weekdays") return "Vardagar";
+  if (recurrence === "weekly") return (days ?? []).map((d) => WEEKDAY_LABELS[d]).join(", ") || "Veckovis";
+  return null;
+}
