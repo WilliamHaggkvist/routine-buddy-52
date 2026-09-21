@@ -6,14 +6,7 @@ const daySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 type Ctx = { supabase: any; userId: string; claims: Record<string, unknown> };
 
-function dueToday(
-  task: { due_date: string | null; recurrence: string; recurrence_days: number[] | null },
-  day: string,
-  weekday: number,
-) {
-  if (task.recurrence === "daily") return true;
-  if (task.recurrence === "weekdays") return weekday >= 1 && weekday <= 5;
-  if (task.recurrence === "weekly") return (task.recurrence_days ?? []).includes(weekday);
+function dueToday(task: { due_date: string | null }, day: string) {
   return task.due_date === day;
 }
 
@@ -21,10 +14,11 @@ async function recomputeDay(ctx: Ctx, day: string) {
   const weekday = new Date(`${day}T12:00:00`).getDay();
   const { data: tasks } = await ctx.supabase
     .from("tasks")
-    .select("id, due_date, recurrence, recurrence_days")
+    .select("id, due_date")
     .eq("is_archived", false)
     .is("parent_id", null);
-  const todays = (tasks ?? []).filter((t: any) => dueToday(t, day, weekday));
+  const todays = (tasks ?? []).filter((t: any) => dueToday(t, day));
+
   const { data: taskDone } = await ctx.supabase
     .from("task_completions")
     .select("task_id")
