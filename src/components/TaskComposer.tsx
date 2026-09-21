@@ -148,7 +148,11 @@ export function TaskComposer({ lists, defaultDay = null, defaultListId = null, p
               </p>
               <div className="flex gap-2">
                 {PRIORITIES.map((p) => (
-                  <Chip key={p.value} active={priority === p.value} onClick={() => setPriority(p.value)}>
+                  <Chip
+                    key={p.value}
+                    active={priority === p.value}
+                    onClick={() => setPriority(priority === p.value ? null : p.value)}
+                  >
                     {p.label}
                   </Chip>
                 ))}
