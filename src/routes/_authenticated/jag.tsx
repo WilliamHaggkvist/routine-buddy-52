@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/BottomNav";
 import { useDashboard, useRefreshDashboard } from "@/hooks/useDashboard";
 import { getSettings, saveProfile, saveSettings } from "@/lib/app.functions";
+import { getVapidKey, removePushSubscription, savePushSubscription, sendTestPush } from "@/lib/push.functions";
+import { disablePush, enablePush } from "@/lib/push-client";
 import { changePin } from "@/lib/pin-auth.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
