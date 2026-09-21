@@ -93,7 +93,7 @@ function RoutinesPage() {
 
       <div className="mt-5 space-y-4">
         {routines.map((r: any) => (
-          <div key={r.id} className="rounded-3xl border border-border bg-card p-3">
+          <div key={r.id} className="overflow-hidden rounded-3xl border border-border bg-card p-3">
             <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
               <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-secondary text-xl">{r.emoji}</span>
               <div className="min-w-0">
@@ -103,6 +103,7 @@ function RoutinesPage() {
                 </p>
               </div>
               <Switch
+                className="shrink-0"
                 checked={r.is_active}
                 onCheckedChange={async (v) => {
                   await saveRoutineFn({ data: { id: r.id, name: r.name, isActive: v } });
@@ -111,14 +112,14 @@ function RoutinesPage() {
               />
             </div>
 
-            <div className="mt-3 flex flex-wrap gap-1">
+            <div className="mt-3 grid grid-cols-7 gap-1">
               {WEEKDAY_LABELS.map((label, i) => (
                 <button
                   key={i}
                   type="button"
                   onClick={() => toggleDay(r, i)}
                   className={cn(
-                    "min-h-10 min-w-11 rounded-xl text-xs font-bold transition-colors",
+                    "min-h-10 rounded-xl px-0 text-xs font-bold transition-colors",
                     (r.days ?? []).includes(i)
                       ? "bg-primary text-primary-foreground"
                       : "bg-secondary text-muted-foreground",
@@ -130,7 +131,7 @@ function RoutinesPage() {
             </div>
 
             <div className="mt-3 grid grid-cols-2 gap-2">
-              <label className="text-xs font-semibold text-muted-foreground">
+              <label className="min-w-0 text-xs font-semibold text-muted-foreground">
                 Börjar
                 <Input
                   type="time"
@@ -139,10 +140,10 @@ function RoutinesPage() {
                     await saveRoutineFn({ data: { id: r.id, name: r.name, windowStart: e.target.value } });
                     refresh();
                   }}
-                  className="mt-1 h-12 rounded-xl"
+                  className="mt-1 h-12 w-full min-w-0 rounded-xl px-2 text-sm"
                 />
               </label>
-              <label className="text-xs font-semibold text-muted-foreground">
+              <label className="min-w-0 text-xs font-semibold text-muted-foreground">
                 Slutar
                 <Input
                   type="time"
@@ -151,12 +152,12 @@ function RoutinesPage() {
                     await saveRoutineFn({ data: { id: r.id, name: r.name, windowEnd: e.target.value } });
                     refresh();
                   }}
-                  className="mt-1 h-12 rounded-xl"
+                  className="mt-1 h-12 w-full min-w-0 rounded-xl px-2 text-sm"
                 />
               </label>
             </div>
 
-            <div className="mt-3 space-y-2">
+            <div className="mt-3 space-y-1.5">
               {r.steps.map((s: any) => (
                 <CheckRow
                   key={s.id}
