@@ -9,7 +9,7 @@ import { TaskComposer } from "@/components/TaskComposer";
 import { TaskSheet } from "@/components/TaskSheet";
 import { useDashboard, useRefreshDashboard } from "@/hooks/useDashboard";
 import { createTask, toggleTask, updateTask } from "@/lib/app.functions";
-import { addDays, humanDate, recurrenceLabel, shortTime } from "@/lib/day";
+import { addDays, humanDate, priorityLabel, shortTime } from "@/lib/day";
 
 export const Route = createFileRoute("/_authenticated/planerat")({
   head: () => ({
