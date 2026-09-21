@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/BottomNav";
 import { useDashboard, useRefreshDashboard } from "@/hooks/useDashboard";
 import { getSettings, saveProfile, saveSettings } from "@/lib/app.functions";
+import { getVapidKey, removePushSubscription, savePushSubscription, sendTestPush } from "@/lib/push.functions";
+import { disablePush, enablePush } from "@/lib/push-client";
 import { changePin } from "@/lib/pin-auth.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -52,10 +54,16 @@ function MePage() {
 
   const settings = useQuery({ queryKey: ["settings"], queryFn: () => fetchSettings({ data: undefined as never }) });
   const s = settings.data as any;
+  const fetchVapid = useServerFn(getVapidKey);
+  const saveSubscription = useServerFn(savePushSubscription);
+  const removeSubscription = useServerFn(removePushSubscription);
+  const testPush = useServerFn(sendTestPush);
 
   const [name, setName] = useState<string | null>(null);
   const [currentPin, setCurrentPin] = useState("");
   const [newPin, setNewPin] = useState("");
+  const [email, setEmail] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   async function patch(p: Record<string, unknown>) {
     await saveSettingsFn({ data: { patch: p } });
@@ -63,18 +71,54 @@ function MePage() {
   }
 
   async function askForPush(enabled: boolean) {
-    if (!enabled) return patch({ push_enabled: false });
-    if (typeof Notification === "undefined") {
-      toast.error("Den här webbläsaren stöder inte notiser");
-      return;
+    setBusy(true);
+    try {
+      if (!enabled) {
+        const endpoint = await disablePush();
+        if (endpoint) await removeSubscription({ data: { endpoint } });
+        await patch({ push_enabled: false });
+        toast.success("Notiser i telefonen är av");
+        return;
+      }
+
+      const { publicKey } = await fetchVapid({ data: undefined as never });
+      const outcome = await enablePush(publicKey);
+      if (outcome.status !== "ok") {
+        toast.error(outcome.message);
+        return;
+      }
+      await saveSubscription({
+        data: {
+          endpoint: outcome.endpoint,
+          p256dh: outcome.p256dh,
+          auth: outcome.auth,
+          label: outcome.label,
+        },
+      });
+      await patch({ push_enabled: true });
+      toast.success("Notiser är på – den här enheten är kopplad");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Kunde inte slå på notiser");
+    } finally {
+      setBusy(false);
     }
-    const perm = await Notification.requestPermission();
-    if (perm !== "granted") {
-      toast.error("Notiser är blockerade i telefonens inställningar");
-      return;
+  }
+
+  async function handleTestPush() {
+    setBusy(true);
+    try {
+      const res = (await testPush({ data: undefined as never })) as {
+        ok: boolean;
+        sent: number;
+        error: string | null;
+      };
+      if (res.ok) toast.success(`Testnotis skickad till ${res.sent} enhet${res.sent === 1 ? "" : "er"}`);
+      else toast.error(res.error ?? "Kunde inte skicka testnotisen");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Kunde inte skicka testnotisen");
+    } finally {
+      setBusy(false);
     }
-    await patch({ push_enabled: true });
-    new Notification("Notiser är på ✦", { body: "Du får påminnelser härifrån nu." });
   }
 
   async function handleSignOut() {
@@ -126,12 +170,36 @@ function MePage() {
 
       <h2 className="mt-7 px-1 text-xs font-bold tracking-[0.12em] text-muted-foreground uppercase">Påminnelser</h2>
       <section className="mt-2 rounded-3xl border border-border bg-card px-4 py-1">
-        <Row label="Notiser i telefonen" hint="Fungerar bäst om du sparar sidan på hemskärmen">
-          <Switch checked={!!s?.push_enabled} onCheckedChange={askForPush} />
+        <Row label="Notiser i telefonen" hint="Kommer fram även när appen är stängd">
+          <Switch checked={!!s?.push_enabled} onCheckedChange={askForPush} disabled={busy} />
         </Row>
+        {s?.push_enabled ? (
+          <Row label="Testa notisen" hint="Skickar en notis till dina kopplade enheter">
+            <button
+              type="button"
+              onClick={handleTestPush}
+              disabled={busy}
+              className="min-h-10 rounded-xl bg-secondary px-3 text-xs font-bold text-secondary-foreground disabled:opacity-50"
+            >
+              Skicka test
+            </button>
+          </Row>
+        ) : null}
         <Row label="Påminnelser via e-post" hint="Morgonöversikt och kvällskoll i mailen">
           <Switch checked={!!s?.email_enabled} onCheckedChange={(v) => patch({ email_enabled: v })} />
         </Row>
+        {s?.email_enabled ? (
+          <Row label="Skicka mailen till" hint="Lämna tomt för att använda din inloggningsmail">
+            <Input
+              type="email"
+              value={email ?? s?.email_address ?? ""}
+              onChange={(e) => setEmail(e.target.value)}
+              onBlur={(e) => patch({ email_address: e.target.value.trim() || null })}
+              placeholder={data?.profile?.email ?? "din@mail.se"}
+              className="h-12 w-44 rounded-xl"
+            />
+          </Row>
+        ) : null}
         <Row label="Nudgar inne i appen" hint="Mjuka puffar när något ligger orört">
           <Switch checked={!!s?.inapp_enabled} onCheckedChange={(v) => patch({ inapp_enabled: v })} />
         </Row>
@@ -207,8 +275,9 @@ function MePage() {
       <div className="mt-4 flex items-start gap-2 rounded-2xl bg-warm/50 px-4 py-3 text-xs text-warm-foreground">
         {s?.push_enabled ? <Bell className="mt-0.5 size-4 shrink-0" /> : <BellOff className="mt-0.5 size-4 shrink-0" />}
         <p>
-          Notiser skickas medan Dagsform är öppen eller sparad på hemskärmen. Vill du ha dem även när appen är helt
-          stängd, och mail som kommer säkert, säg till – då kopplar vi på utskick i bakgrunden.
+          {s?.push_enabled
+            ? "Notiser skickas till den här enheten även när appen är stängd. Slå på notiser igen på varje telefon eller dator du vill få dem på."
+            : "Slå på notiser för att få påminnelser i telefonen även när appen är stängd. På iPhone måste du först spara Dagsform på hemskärmen."}
         </p>
       </div>
 
