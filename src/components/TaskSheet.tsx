@@ -10,10 +10,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CheckRow } from "@/components/CheckRow";
 import { createTask, deleteTask, toggleTask, updateTask } from "@/lib/app.functions";
-import { addDays, humanDate, todayKey, WEEKDAY_LABELS } from "@/lib/day";
+import { addDays, humanDate, PRIORITIES, todayKey } from "@/lib/day";
 import { cn } from "@/lib/utils";
-
-const ESTIMATES = [2, 10, 30];
 
 function Chip({ active, children, onClick }: { active?: boolean; children: React.ReactNode; onClick?: () => void }) {
   return (
@@ -62,7 +60,6 @@ export function TaskSheet({ task, lists, day, onClose, onChanged }: Props) {
   }
 
   const today = todayKey();
-  const recurrenceDays: number[] = task.recurrence_days ?? [];
 
   return (
     <Sheet open={!!task} onOpenChange={(o) => (!o ? onClose() : null)}>
@@ -132,15 +129,15 @@ export function TaskSheet({ task, lists, day, onClose, onChanged }: Props) {
               />
             </label>
             <div className="min-w-0">
-              <p className="text-xs font-bold tracking-wide text-muted-foreground uppercase">Hur lång tid</p>
+              <p className="text-xs font-bold tracking-wide text-muted-foreground uppercase">Prio</p>
               <div className="mt-1 flex gap-1">
-                {ESTIMATES.map((m) => (
+                {PRIORITIES.map((p) => (
                   <Chip
-                    key={m}
-                    active={task.estimate_minutes === m}
-                    onClick={() => patch({ estimate_minutes: task.estimate_minutes === m ? null : m })}
+                    key={p.value}
+                    active={(task.priority ?? 2) === p.value}
+                    onClick={() => patch({ priority: p.value })}
                   >
-                    {m}
+                    {p.value}
                   </Chip>
                 ))}
               </div>
@@ -159,49 +156,6 @@ export function TaskSheet({ task, lists, day, onClose, onChanged }: Props) {
                 </Chip>
               ))}
             </div>
-          </div>
-
-          <div>
-            <p className="mb-2 text-xs font-bold tracking-wide text-muted-foreground uppercase">Återkommer</p>
-            <div className="flex flex-wrap gap-2">
-              <Chip active={task.recurrence === "none"} onClick={() => patch({ recurrence: "none" })}>
-                Nej
-              </Chip>
-              <Chip active={task.recurrence === "daily"} onClick={() => patch({ recurrence: "daily" })}>
-                Varje dag
-              </Chip>
-              <Chip active={task.recurrence === "weekdays"} onClick={() => patch({ recurrence: "weekdays" })}>
-                Vardagar
-              </Chip>
-              <Chip active={task.recurrence === "weekly"} onClick={() => patch({ recurrence: "weekly" })}>
-                Veckodagar
-              </Chip>
-            </div>
-            {task.recurrence === "weekly" ? (
-              <div className="mt-2 grid grid-cols-7 gap-1">
-                {WEEKDAY_LABELS.map((label, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() =>
-                      patch({
-                        recurrence_days: recurrenceDays.includes(i)
-                          ? recurrenceDays.filter((d) => d !== i)
-                          : [...recurrenceDays, i].sort(),
-                      })
-                    }
-                    className={cn(
-                      "min-h-10 rounded-xl text-xs font-bold",
-                      recurrenceDays.includes(i)
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-secondary text-muted-foreground",
-                    )}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            ) : null}
           </div>
 
           <div>
