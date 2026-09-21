@@ -99,7 +99,7 @@ function PlannedPage() {
     );
   }
 
-  const inget = imorgon.length + veckan.length + senare.length + utanDatum.length === 0;
+  const inget = forsenade.length + imorgon.length + veckan.length + senare.length + utanDatum.length === 0;
 
   return (
     <AppShell>
