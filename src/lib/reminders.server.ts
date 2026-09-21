@@ -68,16 +68,10 @@ function inQuietHours(nowMinutes: number, start: string, end: string) {
   return s < e ? nowMinutes >= s && nowMinutes < e : nowMinutes >= s || nowMinutes < e;
 }
 
-function dueToday(
-  task: { due_date: string | null; recurrence: string; recurrence_days: number[] | null },
-  day: string,
-  weekday: number,
-) {
-  if (task.recurrence === "daily") return true;
-  if (task.recurrence === "weekdays") return weekday >= 1 && weekday <= 5;
-  if (task.recurrence === "weekly") return (task.recurrence_days ?? []).includes(weekday);
+function dueToday(task: { due_date: string | null }, day: string) {
   return task.due_date === day;
 }
+
 
 type Reminder = { kind: string; payload: PushPayload };
 
