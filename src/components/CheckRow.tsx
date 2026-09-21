@@ -5,13 +5,15 @@ type Props = {
   title: string;
   done: boolean;
   onToggle: () => void;
+  /** Om satt öppnas detaljvyn när man trycker på texten */
+  onOpen?: () => void;
   meta?: string | null;
   size?: "md" | "sm";
   trailing?: React.ReactNode;
   tone?: "default" | "missed";
 };
 
-export function CheckRow({ title, done, onToggle, meta, size = "md", trailing, tone = "default" }: Props) {
+export function CheckRow({ title, done, onToggle, onOpen, meta, size = "md", trailing, tone = "default" }: Props) {
   return (
     <div
       className={cn(
@@ -32,7 +34,7 @@ export function CheckRow({ title, done, onToggle, meta, size = "md", trailing, t
       >
         {done ? <Check className="size-6" strokeWidth={3} /> : null}
       </button>
-      <button type="button" onClick={onToggle} className="min-w-0 py-2 text-left">
+      <button type="button" onClick={onOpen ?? onToggle} className="min-w-0 py-2 text-left">
         <span
           className={cn(
             "block truncate font-medium",
