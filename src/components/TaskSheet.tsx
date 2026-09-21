@@ -159,40 +159,7 @@ export function TaskSheet({ task, lists, day, onClose, onChanged }: Props) {
           </div>
 
 
-          <div className="grid grid-cols-2 gap-2 pt-2">
-            <button
-              type="button"
-              onClick={async () => {
-                await patch({ due_date: today });
-                toast.success("Ligger på dagens lista");
-                onClose();
-              }}
-              className="min-h-14 rounded-2xl bg-primary text-sm font-bold text-primary-foreground"
-            >
-              Flytta till idag
-            </button>
-            <button
-              type="button"
-              onClick={async () => {
-                await patch({ due_date: addDays(today, 1) });
-                toast.success("Flyttad till imorgon");
-                onClose();
-              }}
-              className="min-h-14 rounded-2xl bg-secondary text-sm font-bold text-secondary-foreground"
-            >
-              Flytta till imorgon
-            </button>
-            <button
-              type="button"
-              onClick={async () => {
-                await patch({ is_archived: true });
-                toast("Släppt – inget dåligt samvete");
-                onClose();
-              }}
-              className="min-h-14 rounded-2xl bg-warm text-sm font-bold text-warm-foreground"
-            >
-              Släpp den
-            </button>
+          <div className="pt-2">
             <button
               type="button"
               onClick={async () => {
@@ -201,7 +168,7 @@ export function TaskSheet({ task, lists, day, onClose, onChanged }: Props) {
                 toast("Borttagen");
                 onClose();
               }}
-              className="min-h-14 rounded-2xl bg-secondary text-sm font-bold text-destructive"
+              className="min-h-14 w-full rounded-2xl bg-secondary text-sm font-bold text-destructive"
             >
               Ta bort
             </button>
