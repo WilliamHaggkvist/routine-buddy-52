@@ -6,9 +6,6 @@ const daySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 type Ctx = { supabase: any; userId: string; claims: Record<string, unknown> };
 
-const POINTS_TASK = 5;
-const POINTS_STEP = 2;
-
 function dueToday(
   task: { due_date: string | null; recurrence: string; recurrence_days: number[] | null },
   day: string,
@@ -57,7 +54,6 @@ async function recomputeDay(ctx: Ctx, day: string) {
       tasks_total: tasksTotal,
       steps_done: stepsDoneCount,
       steps_total: stepsTotal,
-      points: Math.max(0, (existing?.points ?? 0) + pointsDelta),
       completed: total > 0 && done >= total,
       updated_at: new Date().toISOString(),
     },
@@ -154,7 +150,6 @@ export const getDashboard = createServerFn({ method: "POST" })
       notifications: notes ?? [],
       progress: { done: doneTodayCount, total: totalToday },
       streak: streakFrom((summaries ?? []) as any, day),
-      points: profile?.points ?? 0,
     };
   });
 
@@ -169,10 +164,10 @@ export const toggleTask = createServerFn({ method: "POST" })
       await ctx.supabase
         .from("task_completions")
         .upsert({ user_id: ctx.userId, task_id: data.taskId, completed_on: data.day }, { onConflict: "task_id,completed_on" });
-      await addPoints(ctx, data.day, POINTS_TASK);
+      await recomputeDay(ctx, data.day);
     } else {
       await ctx.supabase.from("task_completions").delete().eq("task_id", data.taskId).eq("completed_on", data.day);
-      await addPoints(ctx, data.day, -POINTS_TASK);
+      await recomputeDay(ctx, data.day);
     }
     return { ok: true };
   });
@@ -191,14 +186,14 @@ export const toggleStep = createServerFn({ method: "POST" })
         { user_id: ctx.userId, step_id: data.stepId, routine_id: data.routineId, completed_on: data.day },
         { onConflict: "step_id,completed_on" },
       );
-      await addPoints(ctx, data.day, POINTS_STEP);
+      await recomputeDay(ctx, data.day);
     } else {
       await ctx.supabase
         .from("routine_step_completions")
         .delete()
         .eq("step_id", data.stepId)
         .eq("completed_on", data.day);
-      await addPoints(ctx, data.day, -POINTS_STEP);
+      await recomputeDay(ctx, data.day);
     }
     return { ok: true };
   });
