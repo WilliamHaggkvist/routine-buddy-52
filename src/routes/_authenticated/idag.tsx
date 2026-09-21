@@ -303,11 +303,10 @@ function TodayPage() {
                 day: input.day,
                 dueTime: input.dueTime,
                 listId: input.listId,
-                estimateMinutes: input.estimateMinutes,
-                recurrence: input.recurrence,
-                recurrenceDays: input.recurrenceDays,
+                priority: input.priority,
               },
             });
+
             refresh();
           }}
         />
