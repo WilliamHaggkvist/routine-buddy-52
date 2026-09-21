@@ -10,33 +10,94 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedIdagRouteImport } from './routes/_authenticated/idag'
+import { Route as AuthenticatedJagRouteImport } from './routes/_authenticated/jag'
+import { Route as AuthenticatedListorRouteImport } from './routes/_authenticated/listor'
+import { Route as AuthenticatedRutinerRouteImport } from './routes/_authenticated/rutiner'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedIdagRoute = AuthenticatedIdagRouteImport.update({
+  id: '/idag',
+  path: '/idag',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedJagRoute = AuthenticatedJagRouteImport.update({
+  id: '/jag',
+  path: '/jag',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedListorRoute = AuthenticatedListorRouteImport.update({
+  id: '/listor',
+  path: '/listor',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedRutinerRoute = AuthenticatedRutinerRouteImport.update({
+  id: '/rutiner',
+  path: '/rutiner',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/idag': typeof AuthenticatedIdagRoute
+  '/jag': typeof AuthenticatedJagRoute
+  '/listor': typeof AuthenticatedListorRoute
+  '/rutiner': typeof AuthenticatedRutinerRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/idag': typeof AuthenticatedIdagRoute
+  '/jag': typeof AuthenticatedJagRoute
+  '/listor': typeof AuthenticatedListorRoute
+  '/rutiner': typeof AuthenticatedRutinerRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_authenticated/idag': typeof AuthenticatedIdagRoute
+  '/_authenticated/jag': typeof AuthenticatedJagRoute
+  '/_authenticated/listor': typeof AuthenticatedListorRoute
+  '/_authenticated/rutiner': typeof AuthenticatedRutinerRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/auth' | '/idag' | '/jag' | '/listor' | '/rutiner'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/auth' | '/idag' | '/jag' | '/listor' | '/rutiner'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/idag'
+    | '/_authenticated/jag'
+    | '/_authenticated/listor'
+    | '/_authenticated/rutiner'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +109,72 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/idag': {
+      id: '/_authenticated/idag'
+      path: '/idag'
+      fullPath: '/idag'
+      preLoaderRoute: typeof AuthenticatedIdagRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/jag': {
+      id: '/_authenticated/jag'
+      path: '/jag'
+      fullPath: '/jag'
+      preLoaderRoute: typeof AuthenticatedJagRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/listor': {
+      id: '/_authenticated/listor'
+      path: '/listor'
+      fullPath: '/listor'
+      preLoaderRoute: typeof AuthenticatedListorRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/rutiner': {
+      id: '/_authenticated/rutiner'
+      path: '/rutiner'
+      fullPath: '/rutiner'
+      preLoaderRoute: typeof AuthenticatedRutinerRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedIdagRoute: typeof AuthenticatedIdagRoute
+  AuthenticatedJagRoute: typeof AuthenticatedJagRoute
+  AuthenticatedListorRoute: typeof AuthenticatedListorRoute
+  AuthenticatedRutinerRoute: typeof AuthenticatedRutinerRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedIdagRoute: AuthenticatedIdagRoute,
+  AuthenticatedJagRoute: AuthenticatedJagRoute,
+  AuthenticatedListorRoute: AuthenticatedListorRoute,
+  AuthenticatedRutinerRoute: AuthenticatedRutinerRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
