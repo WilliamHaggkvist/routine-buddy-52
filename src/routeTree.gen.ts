@@ -16,6 +16,7 @@ import { Route as AuthenticatedIdagRouteImport } from './routes/_authenticated/i
 import { Route as AuthenticatedJagRouteImport } from './routes/_authenticated/jag'
 import { Route as AuthenticatedListorRouteImport } from './routes/_authenticated/listor'
 import { Route as AuthenticatedRutinerRouteImport } from './routes/_authenticated/rutiner'
+import { Route as ApiPublicRemindersRouteImport } from './routes/api/public/reminders'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -51,6 +52,11 @@ const AuthenticatedRutinerRoute = AuthenticatedRutinerRouteImport.update({
   path: '/rutiner',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicRemindersRoute = ApiPublicRemindersRouteImport.update({
+  id: '/api/public/reminders',
+  path: '/api/public/reminders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/jag': typeof AuthenticatedJagRoute
   '/listor': typeof AuthenticatedListorRoute
   '/rutiner': typeof AuthenticatedRutinerRoute
+  '/api/public/reminders': typeof ApiPublicRemindersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -67,6 +74,7 @@ export interface FileRoutesByTo {
   '/jag': typeof AuthenticatedJagRoute
   '/listor': typeof AuthenticatedListorRoute
   '/rutiner': typeof AuthenticatedRutinerRoute
+  '/api/public/reminders': typeof ApiPublicRemindersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -77,12 +85,27 @@ export interface FileRoutesById {
   '/_authenticated/jag': typeof AuthenticatedJagRoute
   '/_authenticated/listor': typeof AuthenticatedListorRoute
   '/_authenticated/rutiner': typeof AuthenticatedRutinerRoute
+  '/api/public/reminders': typeof ApiPublicRemindersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/idag' | '/jag' | '/listor' | '/rutiner'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/idag'
+    | '/jag'
+    | '/listor'
+    | '/rutiner'
+    | '/api/public/reminders'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/idag' | '/jag' | '/listor' | '/rutiner'
+  to:
+    | '/'
+    | '/auth'
+    | '/idag'
+    | '/jag'
+    | '/listor'
+    | '/rutiner'
+    | '/api/public/reminders'
   id:
     | '__root__'
     | '/'
@@ -92,12 +115,14 @@ export interface FileRouteTypes {
     | '/_authenticated/jag'
     | '/_authenticated/listor'
     | '/_authenticated/rutiner'
+    | '/api/public/reminders'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicRemindersRoute: typeof ApiPublicRemindersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -151,6 +176,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRutinerRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/reminders': {
+      id: '/api/public/reminders'
+      path: '/api/public/reminders'
+      fullPath: '/api/public/reminders'
+      preLoaderRoute: typeof ApiPublicRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -175,6 +207,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicRemindersRoute: ApiPublicRemindersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
