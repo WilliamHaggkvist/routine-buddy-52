@@ -395,6 +395,7 @@ export type Database = {
           list_id: string | null
           notes: string | null
           parent_id: string | null
+          priority: number
           recurrence: string
           recurrence_days: number[]
           sort_order: number
@@ -411,6 +412,7 @@ export type Database = {
           list_id?: string | null
           notes?: string | null
           parent_id?: string | null
+          priority?: number
           recurrence?: string
           recurrence_days?: number[]
           sort_order?: number
@@ -427,6 +429,7 @@ export type Database = {
           list_id?: string | null
           notes?: string | null
           parent_id?: string | null
+          priority?: number
           recurrence?: string
           recurrence_days?: number[]
           sort_order?: number
