@@ -12,7 +12,7 @@ export type NewTaskInput = {
   day: string | null;
   dueTime: string | null;
   listId: string | null;
-  priority: number;
+  priority: number | null;
 };
 
 type Props = {
@@ -53,7 +53,7 @@ export function TaskComposer({ lists, defaultDay = null, defaultListId = null, p
   const [day, setDay] = useState<string | null>(defaultDay);
   const [dueTime, setDueTime] = useState<string | null>(null);
   const [listId, setListId] = useState<string | null>(defaultListId);
-  const [priority, setPriority] = useState(2);
+  const [priority, setPriority] = useState<number | null>(null);
   const [showMore, setShowMore] = useState(false);
 
   const open = title.trim().length > 0;
@@ -65,7 +65,7 @@ export function TaskComposer({ lists, defaultDay = null, defaultListId = null, p
     setShowMore(false);
     const payload: NewTaskInput = { title: t, day, dueTime, listId, priority };
     setDueTime(null);
-    setPriority(2);
+    setPriority(null);
     setDay(defaultDay);
     setListId(defaultListId);
     await onCreate(payload);
