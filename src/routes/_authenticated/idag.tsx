@@ -138,8 +138,7 @@ function TodayPage() {
   function taskMeta(t: any) {
     return [
       shortTime(t.due_time),
-      t.estimate_minutes ? `${t.estimate_minutes} min` : null,
-      recurrenceLabel(t.recurrence, t.recurrence_days),
+      priorityLabel(t.priority),
       (t.children ?? []).length > 0
         ? `${(t.children ?? []).filter((c: any) => c.done).length}/${(t.children ?? []).length} delsteg`
         : null,
@@ -147,6 +146,7 @@ function TodayPage() {
       .filter(Boolean)
       .join(" · ");
   }
+
 
   function RoutineCard({ r }: { r: any }) {
     const isOpen = open[r.id] ?? r.doneCount < r.steps.length;
