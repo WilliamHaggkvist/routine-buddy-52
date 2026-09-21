@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { deleteTask, updateTask } from "@/lib/app.functions";
-import { addDays, humanDate, PRIORITIES, todayKey } from "@/lib/day";
+import { addDays, humanDate, PRIORITIES, TIME_BANDS, todayKey } from "@/lib/day";
 import { cn } from "@/lib/utils";
 
 const Chip = forwardRef<
@@ -122,9 +122,9 @@ export function TaskSheet({ task, lists, day, onClose, onChanged }: Props) {
               Klockslag
               <Input
                 type="time"
-                key={task.id}
-                defaultValue={task.due_time ? String(task.due_time).slice(0, 5) : ""}
-                onChange={(e) => patch({ due_time: e.target.value || null })}
+                key={`${task.id}-${task.time_band ?? "exact"}`}
+                defaultValue={task.time_band || !task.due_time ? "" : String(task.due_time).slice(0, 5)}
+                onChange={(e) => patch({ due_time: e.target.value || null, time_band: null })}
                 className="mt-1 h-12 w-full min-w-0 rounded-xl px-2 text-sm"
               />
             </label>
@@ -141,6 +141,27 @@ export function TaskSheet({ task, lists, day, onClose, onChanged }: Props) {
                   </Chip>
                 ))}
               </div>
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs font-bold tracking-wide text-muted-foreground uppercase">Tid på dagen</p>
+            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+              {TIME_BANDS.map((b) => (
+                <Chip
+                  key={b.value}
+                  active={task.time_band === b.value}
+                  onClick={() =>
+                    patch(
+                      task.time_band === b.value
+                        ? { time_band: null, due_time: null }
+                        : { time_band: b.value, due_time: b.time },
+                    )
+                  }
+                >
+                  {b.label}
+                </Chip>
+              ))}
             </div>
           </div>
 
