@@ -11,7 +11,7 @@ function toneCopy(tone: Tone) {
     return {
       morning: (n: number) => ({ title: "Dags att köra! ✦", body: n === 0 ? "Inget inbokat – ta dagen lugnt." : `${n} saker väntar. Börja med den lättaste!` }),
       evening: (n: number) => ({ title: n === 0 ? "Allt klart – snyggt jobbat!" : "Sista pushen!", body: n === 0 ? "Hela dagen avklarad. Njut av kvällen." : `${n} kvar. Även en räknas.` }),
-      routine: (name: string) => ({ title: `${name} – nu kör vi!`, body: "Tidsfönstret stänger snart. Bocka av det du orkar." }),
+      routine: (name: string) => ({ title: `${name} – snart dags!`, body: "Börjar om 15 minuter. Bocka av det du orkar." }),
       missed: (n: number) => ({ title: `${n} saker ligger kvar`, body: "Välj EN att göra idag. Resten kan släppas." }),
     };
   }
@@ -19,14 +19,14 @@ function toneCopy(tone: Tone) {
     return {
       morning: (n: number) => ({ title: "Dagens lista", body: n === 0 ? "Inget planerat idag." : `${n} uppgifter idag.` }),
       evening: (n: number) => ({ title: "Kvällskoll", body: n === 0 ? "Allt avklarat." : `${n} kvar av dagens lista.` }),
-      routine: (name: string) => ({ title: name, body: "Tidsfönstret stänger snart." }),
+      routine: (name: string) => ({ title: name, body: "Börjar om 15 minuter." }),
       missed: (n: number) => ({ title: `${n} missade uppgifter`, body: "Gör idag eller släpp." }),
     };
   }
   return {
     morning: (n: number) => ({ title: "God morgon ✦", body: n === 0 ? "Inget måste idag. Fin start." : `${n} saker på listan idag. Ta en i taget.` }),
     evening: (n: number) => ({ title: n === 0 ? "Allt klart idag" : "Kvällskoll", body: n === 0 ? "Hela dagen avbockad. Vila gott." : `${n} kvar – räcker gott att göra en.` }),
-    routine: (name: string) => ({ title: `Dags för ${name.toLowerCase()}`, body: "Tidsfönstret stänger snart – ta stegen i din takt." }),
+    routine: (name: string) => ({ title: `Snart dags för ${name.toLowerCase()}`, body: "Börjar om 15 minuter – ta stegen i din takt." }),
     missed: (n: number) => ({ title: `${n} saker ligger kvar`, body: "Ingen stress. Välj en att göra idag, eller släpp den." }),
   };
 }
@@ -107,7 +107,11 @@ export async function runReminders(now = new Date()) {
           .eq("is_archived", false)
           .is("parent_id", null),
         db.from("task_completions").select("task_id").eq("user_id", userId).eq("completed_on", day),
-        db.from("routines").select("id, name, window_end, days").eq("user_id", userId).eq("is_active", true),
+        db
+          .from("routines")
+          .select("id, name, window_start, window_end, days")
+          .eq("user_id", userId)
+          .eq("is_active", true),
         db.from("routine_steps").select("id, routine_id").eq("user_id", userId),
         db.from("routine_step_completions").select("step_id").eq("user_id", userId).eq("completed_on", day),
       ]);
@@ -144,8 +148,9 @@ export async function runReminders(now = new Date()) {
       for (const r of activeRoutines) {
         const openSteps = (steps ?? []).filter((s: any) => s.routine_id === r.id && !doneStepIds.has(s.id));
         if (openSteps.length === 0) continue;
-        const target = Math.max(0, toMinutes(r.window_end) - 45);
-        if (!justPassed(minutes, target, 45)) continue;
+        // Påminn 15 minuter innan rutinens tidsfönster börjar.
+        const target = Math.max(0, toMinutes(r.window_start) - 15);
+        if (!justPassed(minutes, target, 20)) continue;
         const c = copy.routine(r.name);
         reminders.push({ kind: `routine:${r.id}`, payload: { ...c, url: "/idag", tag: `routine-${r.id}` } });
       }

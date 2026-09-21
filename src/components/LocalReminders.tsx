@@ -14,7 +14,15 @@ type Settings = {
   tone: string;
 };
 
-type Routine = { id: string; name: string; window_end: string; doneCount: number; steps: unknown[]; activeToday: boolean };
+type Routine = {
+  id: string;
+  name: string;
+  window_start: string;
+  window_end: string;
+  doneCount: number;
+  steps: unknown[];
+  activeToday: boolean;
+};
 
 function minutes(t: string) {
   const [h, m] = t.split(":").map(Number);
@@ -81,11 +89,11 @@ export function LocalReminders({
         for (const r of routines) {
           if (!r.activeToday || r.steps.length === 0) continue;
           if (r.doneCount >= r.steps.length) continue;
-          const end = minutes(r.window_end);
-          if (nowMin >= end - 45 && nowMin < end) {
+          const start = minutes(r.window_start);
+          if (nowMin >= start - 15 && nowMin < start + 15) {
             fire(
               `${day}.rutin.${r.id}`,
-              say(settings.tone, `${r.name} snart klar för idag`, `${r.name}: tidsfönstret stänger`),
+              say(settings.tone, `Snart dags för ${r.name.toLowerCase()}`, `${r.name}: börjar snart`),
               `${r.steps.length - r.doneCount} steg kvar.`,
             );
           }
