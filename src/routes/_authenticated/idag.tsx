@@ -228,7 +228,7 @@ function TodayPage() {
         </p>
 
         <div className="mt-4 grid w-full grid-cols-7 gap-1">
-          {week.map((d) => {
+          {week.map((d, i) => {
             const sum = summaries.get(d) as any;
             const isToday = d === day;
             const ratio =
