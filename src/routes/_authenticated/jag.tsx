@@ -54,10 +54,16 @@ function MePage() {
 
   const settings = useQuery({ queryKey: ["settings"], queryFn: () => fetchSettings({ data: undefined as never }) });
   const s = settings.data as any;
+  const fetchVapid = useServerFn(getVapidKey);
+  const saveSubscription = useServerFn(savePushSubscription);
+  const removeSubscription = useServerFn(removePushSubscription);
+  const testPush = useServerFn(sendTestPush);
 
   const [name, setName] = useState<string | null>(null);
   const [currentPin, setCurrentPin] = useState("");
   const [newPin, setNewPin] = useState("");
+  const [email, setEmail] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   async function patch(p: Record<string, unknown>) {
     await saveSettingsFn({ data: { patch: p } });
@@ -65,18 +71,54 @@ function MePage() {
   }
 
   async function askForPush(enabled: boolean) {
-    if (!enabled) return patch({ push_enabled: false });
-    if (typeof Notification === "undefined") {
-      toast.error("Den här webbläsaren stöder inte notiser");
-      return;
+    setBusy(true);
+    try {
+      if (!enabled) {
+        const endpoint = await disablePush();
+        if (endpoint) await removeSubscription({ data: { endpoint } });
+        await patch({ push_enabled: false });
+        toast.success("Notiser i telefonen är av");
+        return;
+      }
+
+      const { publicKey } = await fetchVapid({ data: undefined as never });
+      const outcome = await enablePush(publicKey);
+      if (outcome.status !== "ok") {
+        toast.error(outcome.message);
+        return;
+      }
+      await saveSubscription({
+        data: {
+          endpoint: outcome.endpoint,
+          p256dh: outcome.p256dh,
+          auth: outcome.auth,
+          label: outcome.label,
+        },
+      });
+      await patch({ push_enabled: true });
+      toast.success("Notiser är på – den här enheten är kopplad");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Kunde inte slå på notiser");
+    } finally {
+      setBusy(false);
     }
-    const perm = await Notification.requestPermission();
-    if (perm !== "granted") {
-      toast.error("Notiser är blockerade i telefonens inställningar");
-      return;
+  }
+
+  async function handleTestPush() {
+    setBusy(true);
+    try {
+      const res = (await testPush({ data: undefined as never })) as {
+        ok: boolean;
+        sent: number;
+        error: string | null;
+      };
+      if (res.ok) toast.success(`Testnotis skickad till ${res.sent} enhet${res.sent === 1 ? "" : "er"}`);
+      else toast.error(res.error ?? "Kunde inte skicka testnotisen");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Kunde inte skicka testnotisen");
+    } finally {
+      setBusy(false);
     }
-    await patch({ push_enabled: true });
-    new Notification("Notiser är på ✦", { body: "Du får påminnelser härifrån nu." });
   }
 
   async function handleSignOut() {
