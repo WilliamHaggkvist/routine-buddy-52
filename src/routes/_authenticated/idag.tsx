@@ -13,7 +13,7 @@ import { TaskComposer } from "@/components/TaskComposer";
 import { TaskSheet } from "@/components/TaskSheet";
 import { useDashboard, useRefreshDashboard } from "@/hooks/useDashboard";
 import { createTask, getSettings, markNudgeRead, pushNudge, toggleStep, toggleTask, updateTask } from "@/lib/app.functions";
-import { greeting, humanDate, isSoon, last7Days, priorityLabel, shortTime, WEEKDAY_LABELS } from "@/lib/day";
+import { currentWeekDays, greeting, humanDate, isSoon, priorityLabel, shortTime, WEEKDAY_LABELS_MON_SUN } from "@/lib/day";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/idag")({
@@ -66,7 +66,7 @@ function TodayPage() {
   const [sheetId, setSheetId] = useState<string | null>(null);
   const [showDone, setShowDone] = useState(false);
 
-  const week = useMemo(() => last7Days(), []);
+  const week = useMemo(() => currentWeekDays(), []);
   const summaries = new Map((data?.summaries ?? []).map((s: any) => [s.day, s]));
 
   const tasks = data?.tasks ?? [];
@@ -228,7 +228,7 @@ function TodayPage() {
         </p>
 
         <div className="mt-4 grid w-full grid-cols-7 gap-1">
-          {week.map((d) => {
+          {week.map((d, i) => {
             const sum = summaries.get(d) as any;
             const isToday = d === day;
             const ratio =
@@ -249,7 +249,7 @@ function TodayPage() {
                   />
                 </div>
                 <span className="text-[10px] font-semibold text-muted-foreground">
-                  {WEEKDAY_LABELS[new Date(`${d}T12:00:00`).getDay()]}
+                  {WEEKDAY_LABELS_MON_SUN[i]}
                 </span>
               </div>
             );

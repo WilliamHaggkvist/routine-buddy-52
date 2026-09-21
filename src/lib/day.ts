@@ -35,6 +35,22 @@ export function last7Days(d: Date = new Date()): string[] {
   return out;
 }
 
+export function currentWeekDays(d: Date = new Date()): string[] {
+  const jsDay = d.getDay(); // 0 = söndag, 1 = måndag … 6 = lördag
+  const daysSinceMonday = jsDay === 0 ? 6 : jsDay - 1;
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - daysSinceMonday);
+  const out: string[] = [];
+  for (let i = 0; i < 7; i++) {
+    const x = new Date(monday);
+    x.setDate(monday.getDate() + i);
+    out.push(todayKey(x));
+  }
+  return out;
+}
+
+export const WEEKDAY_LABELS_MON_SUN = ["Mån", "Tis", "Ons", "Tor", "Fre", "Lör", "Sön"];
+
 export function isSoon(due: string | null, now: Date = new Date()): boolean {
   if (!due) return true;
   const [h, m] = due.split(":").map(Number);
