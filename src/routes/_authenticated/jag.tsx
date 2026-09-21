@@ -202,7 +202,7 @@ function MePage() {
             <Switch checked={!!s?.evening_enabled} onCheckedChange={(v) => patch({ evening_enabled: v })} />
           </div>
         </Row>
-        <Row label="Rutinpåminnelser" hint="När ett tidsfönster snart stänger">
+        <Row label="Rutinpåminnelser" hint="15 min innan rutinens tidsfönster börjar">
           <Switch checked={!!s?.routine_reminders} onCheckedChange={(v) => patch({ routine_reminders: v })} />
         </Row>
         <Row label="Missat-puffar">
