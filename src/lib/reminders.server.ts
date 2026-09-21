@@ -114,11 +114,12 @@ export async function runReminders(now = new Date()) {
 
     const doneTaskIds = new Set((taskDone ?? []).map((c: any) => c.task_id));
     const doneStepIds = new Set((stepDone ?? []).map((c: any) => c.step_id));
-    const todayTasks = (tasks ?? []).filter((t: any) => dueToday(t, day, weekday));
+    const todayTasks = (tasks ?? []).filter((t: any) => dueToday(t, day));
     const openTasks = todayTasks.filter((t: any) => !doneTaskIds.has(t.id));
     const missedTasks = (tasks ?? []).filter(
-      (t: any) => t.recurrence === "none" && t.due_date && t.due_date < day && !doneTaskIds.has(t.id),
+      (t: any) => t.due_date && t.due_date < day && !doneTaskIds.has(t.id),
     );
+
     const activeRoutines = (routines ?? []).filter((r: any) => (r.days ?? []).includes(weekday));
 
     const copy = toneCopy((settings.tone ?? "varm") as Tone);
