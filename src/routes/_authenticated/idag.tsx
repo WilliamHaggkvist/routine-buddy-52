@@ -136,13 +136,7 @@ function TodayPage() {
   const complete = progress.total > 0 && progress.done >= progress.total;
 
   function taskMeta(t: any) {
-    return [
-      shortTime(t.due_time),
-      priorityLabel(t.priority),
-      (t.children ?? []).length > 0
-        ? `${(t.children ?? []).filter((c: any) => c.done).length}/${(t.children ?? []).length} delsteg`
-        : null,
-    ]
+    return [shortTime(t.due_time), priorityLabel(t.priority)]
       .filter(Boolean)
       .join(" · ");
   }
