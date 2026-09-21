@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { todayKey } from "@/lib/day";
+import { taskTime, TIME_BANDS, todayKey } from "@/lib/day";
 
 type Settings = {
   push_enabled: boolean;
@@ -9,6 +9,7 @@ type Settings = {
   evening_enabled: boolean;
   evening_time: string;
   routine_reminders: boolean;
+  task_reminders?: boolean;
   quiet_start: string;
   quiet_end: string;
   tone: string;
@@ -54,10 +55,12 @@ export function LocalReminders({
   settings,
   progress,
   routines,
+  tasks = [],
 }: {
   settings: Settings | null | undefined;
   progress: { done: number; total: number };
   routines: Routine[];
+  tasks?: { id: string; title: string; done?: boolean; due_time?: string | null; time_band?: string | null }[];
 }) {
   useEffect(() => {
     if (!settings || !settings.push_enabled) return;
@@ -85,6 +88,33 @@ export function LocalReminders({
         );
       }
 
+      if (settings.task_reminders !== false) {
+        // En notis per tidpunkt – alla uppgifter med samma klockslag/tidsdel samlas.
+        const groups = new Map<string, { time: string; band: string | null; titles: string[] }>();
+        for (const t of tasks) {
+          if (t.done) continue;
+          const time = taskTime(t);
+          if (!time) continue;
+          const key = t.time_band ? `band:${t.time_band}` : `time:${time}`;
+          const g = groups.get(key) ?? { time, band: t.time_band ?? null, titles: [] };
+          g.titles.push(t.title);
+          groups.set(key, g);
+        }
+        for (const [key, g] of groups) {
+          const target = minutes(g.time);
+          if (nowMin < target || nowMin >= target + 15) continue;
+          const label = TIME_BANDS.find((b) => b.value === g.band)?.label ?? `kl ${g.time}`;
+          const n = g.titles.length;
+          fire(
+            `${day}.uppgifter.${key}`,
+            n === 1 ? g.titles[0]! : `${n} uppgifter · ${label}`,
+            n > 5
+              ? `Du har fler än 5 uppgifter att ta dig an på ${label.toLowerCase()}. Börja med en.`
+              : g.titles.join(" · "),
+          );
+        }
+      }
+
       if (settings.routine_reminders) {
         for (const r of routines) {
           if (!r.activeToday || r.steps.length === 0) continue;
@@ -104,7 +134,7 @@ export function LocalReminders({
     check();
     const id = window.setInterval(check, 60_000);
     return () => window.clearInterval(id);
-  }, [settings, progress.done, progress.total, routines]);
+  }, [settings, progress.done, progress.total, routines, tasks]);
 
   return null;
 }
