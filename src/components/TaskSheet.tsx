@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { CalendarDays, Plus, Trash2 } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -8,8 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CheckRow } from "@/components/CheckRow";
-import { createTask, deleteTask, toggleTask, updateTask } from "@/lib/app.functions";
+import { deleteTask, updateTask } from "@/lib/app.functions";
 import { addDays, humanDate, PRIORITIES, todayKey } from "@/lib/day";
 import { cn } from "@/lib/utils";
 
@@ -39,17 +38,13 @@ type Props = {
 export function TaskSheet({ task, lists, day, onClose, onChanged }: Props) {
   const updateTaskFn = useServerFn(updateTask);
   const deleteTaskFn = useServerFn(deleteTask);
-  const createTaskFn = useServerFn(createTask);
-  const toggleTaskFn = useServerFn(toggleTask);
 
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
-  const [newStep, setNewStep] = useState("");
 
   useEffect(() => {
     setTitle(task?.title ?? "");
     setNotes(task?.notes ?? "");
-    setNewStep("");
   }, [task?.id]);
 
   if (!task) return null;
@@ -158,66 +153,6 @@ export function TaskSheet({ task, lists, day, onClose, onChanged }: Props) {
             </div>
           </div>
 
-          <div>
-            <p className="mb-2 text-xs font-bold tracking-wide text-muted-foreground uppercase">Delsteg</p>
-            <div className="space-y-2">
-              {(task.children ?? []).map((c: any) => (
-                <CheckRow
-                  key={c.id}
-                  size="sm"
-                  title={c.title}
-                  done={c.done}
-                  onToggle={async () => {
-                    await toggleTaskFn({ data: { taskId: c.id, day, done: !c.done } });
-                    onChanged();
-                  }}
-                  trailing={
-                    <button
-                      type="button"
-                      aria-label="Ta bort delsteg"
-                      onClick={async () => {
-                        await deleteTaskFn({ data: { id: c.id, day } });
-                        onChanged();
-                      }}
-                      className="grid size-10 place-items-center rounded-xl bg-secondary text-destructive"
-                    >
-                      <Trash2 className="size-4" />
-                    </button>
-                  }
-                />
-              ))}
-            </div>
-            <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
-              <Input
-                value={newStep}
-                onChange={(e) => setNewStep(e.target.value)}
-                onKeyDown={async (e) => {
-                  if (e.key !== "Enter") return;
-                  const t = newStep.trim();
-                  if (!t) return;
-                  setNewStep("");
-                  await createTaskFn({ data: { title: t, parentId: task.id, listId: task.list_id ?? null } });
-                  onChanged();
-                }}
-                placeholder="Nytt delsteg"
-                className="h-12 rounded-xl"
-              />
-              <button
-                type="button"
-                aria-label="Lägg till delsteg"
-                onClick={async () => {
-                  const t = newStep.trim();
-                  if (!t) return;
-                  setNewStep("");
-                  await createTaskFn({ data: { title: t, parentId: task.id, listId: task.list_id ?? null } });
-                  onChanged();
-                }}
-                className="grid size-12 shrink-0 place-items-center rounded-xl bg-secondary text-secondary-foreground"
-              >
-                <Plus className="size-5" />
-              </button>
-            </div>
-          </div>
 
           <div className="grid grid-cols-2 gap-2 pt-2">
             <button
