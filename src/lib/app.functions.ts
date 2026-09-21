@@ -20,21 +20,7 @@ function dueToday(
   return task.due_date === day;
 }
 
-async function addPoints(ctx: Ctx, day: string, delta: number) {
-  const { data: profile } = await ctx.supabase.from("profiles").select("points").eq("id", ctx.userId).maybeSingle();
-  const next = Math.max(0, (profile?.points ?? 0) + delta);
-  await ctx.supabase.from("profiles").update({ points: next }).eq("id", ctx.userId);
-  await recomputeDay(ctx, day, delta);
-}
-
-async function recomputeDay(ctx: Ctx, day: string, pointsDelta = 0) {
-  const { data: existing } = await ctx.supabase
-    .from("daily_summary")
-    .select("*")
-    .eq("user_id", ctx.userId)
-    .eq("day", day)
-    .maybeSingle();
-
+async function recomputeDay(ctx: Ctx, day: string) {
   const weekday = new Date(`${day}T12:00:00`).getDay();
   const { data: tasks } = await ctx.supabase
     .from("tasks")
