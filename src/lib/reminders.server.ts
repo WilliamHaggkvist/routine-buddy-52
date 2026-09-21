@@ -3,6 +3,19 @@
  * och skickar dem via push, e-post och in-app-notiser.
  */
 import { sendWebPush, type PushPayload, type PushSubscription } from "./web-push.server";
+import { TIME_BANDS } from "./day";
+
+/** Tidsdelens namn, t.ex. "Förmiddag" */
+function bandName(band: string | null | undefined): string | null {
+  return TIME_BANDS.find((b) => b.value === band)?.label ?? null;
+}
+
+/** Klockslaget en uppgift ska påminnas på (tidsdel räknas som sitt riktvärde) */
+function effectiveTime(task: { due_time?: string | null; time_band?: string | null }): string | null {
+  const band = TIME_BANDS.find((b) => b.value === task.time_band);
+  if (band) return band.time;
+  return task.due_time ? task.due_time.slice(0, 5) : null;
+}
 
 type Tone = "varm" | "peppig" | "rakt";
 
