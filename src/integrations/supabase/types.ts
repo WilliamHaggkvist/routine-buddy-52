@@ -82,6 +82,7 @@ export type Database = {
       }
       notification_settings: {
         Row: {
+          email_address: string | null
           email_enabled: boolean
           evening_enabled: boolean
           evening_time: string
@@ -98,6 +99,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          email_address?: string | null
           email_enabled?: boolean
           evening_enabled?: boolean
           evening_time?: string
@@ -114,6 +116,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          email_address?: string | null
           email_enabled?: boolean
           evening_enabled?: boolean
           evening_time?: string
@@ -194,6 +197,8 @@ export type Database = {
           created_at: string
           endpoint: string
           id: string
+          label: string | null
+          last_seen_at: string
           p256dh: string
           user_id: string
         }
@@ -202,6 +207,8 @@ export type Database = {
           created_at?: string
           endpoint: string
           id?: string
+          label?: string | null
+          last_seen_at?: string
           p256dh: string
           user_id?: string
         }
@@ -210,7 +217,33 @@ export type Database = {
           created_at?: string
           endpoint?: string
           id?: string
+          label?: string | null
+          last_seen_at?: string
           p256dh?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      reminder_sends: {
+        Row: {
+          day: string
+          id: string
+          kind: string
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          day: string
+          id?: string
+          kind: string
+          sent_at?: string
+          user_id?: string
+        }
+        Update: {
+          day?: string
+          id?: string
+          kind?: string
+          sent_at?: string
           user_id?: string
         }
         Relationships: []
