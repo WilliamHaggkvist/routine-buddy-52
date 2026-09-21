@@ -1,0 +1,2 @@
+ALTER TABLE public.tasks ALTER COLUMN priority DROP DEFAULT;
+ALTER TABLE public.tasks ALTER COLUMN priority DROP NOT NULL;
