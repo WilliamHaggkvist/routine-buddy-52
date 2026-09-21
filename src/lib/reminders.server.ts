@@ -1,0 +1,227 @@
+/**
+ * Server-only logic som räknar ut vilka påminnelser som ska skickas just nu
+ * och skickar dem via push, e-post och in-app-notiser.
+ */
+import { sendWebPush, type PushPayload, type PushSubscription } from "./web-push.server";
+
+type Tone = "varm" | "peppig" | "rakt";
+
+function toneCopy(tone: Tone) {
+  if (tone === "peppig") {
+    return {
+      morning: (n: number) => ({ title: "Dags att köra! ✦", body: n === 0 ? "Inget inbokat – ta dagen lugnt." : `${n} saker väntar. Börja med den lättaste!` }),
+      evening: (n: number) => ({ title: n === 0 ? "Allt klart – snyggt jobbat!" : "Sista pushen!", body: n === 0 ? "Hela dagen avklarad. Njut av kvällen." : `${n} kvar. Även en räknas.` }),
+      routine: (name: string) => ({ title: `${name} – nu kör vi!`, body: "Tidsfönstret stänger snart. Bocka av det du orkar." }),
+      missed: (n: number) => ({ title: `${n} saker ligger kvar`, body: "Välj EN att göra idag. Resten kan släppas." }),
+    };
+  }
+  if (tone === "rakt") {
+    return {
+      morning: (n: number) => ({ title: "Dagens lista", body: n === 0 ? "Inget planerat idag." : `${n} uppgifter idag.` }),
+      evening: (n: number) => ({ title: "Kvällskoll", body: n === 0 ? "Allt avklarat." : `${n} kvar av dagens lista.` }),
+      routine: (name: string) => ({ title: name, body: "Tidsfönstret stänger snart." }),
+      missed: (n: number) => ({ title: `${n} missade uppgifter`, body: "Gör idag eller släpp." }),
+    };
+  }
+  return {
+    morning: (n: number) => ({ title: "God morgon ✦", body: n === 0 ? "Inget måste idag. Fin start." : `${n} saker på listan idag. Ta en i taget.` }),
+    evening: (n: number) => ({ title: n === 0 ? "Allt klart idag" : "Kvällskoll", body: n === 0 ? "Hela dagen avbockad. Vila gott." : `${n} kvar – räcker gott att göra en.` }),
+    routine: (name: string) => ({ title: `Dags för ${name.toLowerCase()}`, body: "Tidsfönstret stänger snart – ta stegen i din takt." }),
+    missed: (n: number) => ({ title: `${n} saker ligger kvar`, body: "Ingen stress. Välj en att göra idag, eller släpp den." }),
+  };
+}
+
+function localParts(now: Date, timezone: string) {
+  const fmt = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    weekday: "short",
+    hour12: false,
+  });
+  const map: Record<string, string> = {};
+  for (const part of fmt.formatToParts(now)) map[part.type] = part.value;
+  const day = `${map["year"]}-${map["month"]}-${map["day"]}`;
+  const minutes = Number(map["hour"]) * 60 + Number(map["minute"]);
+  const weekday = new Date(`${day}T12:00:00Z`).getUTCDay();
+  return { day, minutes, weekday };
+}
+
+function toMinutes(time: string) {
+  const [h, m] = time.slice(0, 5).split(":");
+  return Number(h) * 60 + Number(m);
+}
+
+/** Är klockslaget precis passerat (inom fönstret) så att vi ska skicka nu? */
+function justPassed(nowMinutes: number, targetMinutes: number, windowMinutes: number) {
+  const diff = nowMinutes - targetMinutes;
+  return diff >= 0 && diff < windowMinutes;
+}
+
+function inQuietHours(nowMinutes: number, start: string, end: string) {
+  const s = toMinutes(start);
+  const e = toMinutes(end);
+  if (s === e) return false;
+  return s < e ? nowMinutes >= s && nowMinutes < e : nowMinutes >= s || nowMinutes < e;
+}
+
+function dueToday(
+  task: { due_date: string | null; recurrence: string; recurrence_days: number[] | null },
+  day: string,
+  weekday: number,
+) {
+  if (task.recurrence === "daily") return true;
+  if (task.recurrence === "weekdays") return weekday >= 1 && weekday <= 5;
+  if (task.recurrence === "weekly") return (task.recurrence_days ?? []).includes(weekday);
+  return task.due_date === day;
+}
+
+type Reminder = { kind: string; payload: PushPayload };
+
+async function sendEmail(to: string, subject: string, text: string) {
+  const apiKey = process.env["RESEND_API_KEY"];
+  const from = process.env["REMINDER_EMAIL_FROM"] ?? "Dagsform <onboarding@resend.dev>";
+  if (!apiKey) return { ok: false, error: "RESEND_API_KEY saknas" };
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from, to: [to], subject, text }),
+  });
+  if (!res.ok) return { ok: false, error: `${res.status}: ${await res.text()}` };
+  return { ok: true as const };
+}
+
+export async function runReminders(now = new Date()) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const db = supabaseAdmin as any;
+
+  const { data: allSettings } = await db.from("notification_settings").select("*");
+  const result = { users: 0, sent: 0, pushed: 0, emailed: 0, skipped: 0, errors: [] as string[] };
+
+  for (const settings of allSettings ?? []) {
+    const userId = settings.user_id as string;
+    const { data: profile } = await db
+      .from("profiles")
+      .select("display_name, email, timezone")
+      .eq("id", userId)
+      .maybeSingle();
+    const timezone = profile?.timezone || "Europe/Stockholm";
+    const { day, minutes, weekday } = localParts(now, timezone);
+    result.users += 1;
+
+    if (inQuietHours(minutes, settings.quiet_start, settings.quiet_end)) {
+      result.skipped += 1;
+      continue;
+    }
+
+    const [{ data: tasks }, { data: taskDone }, { data: routines }, { data: steps }, { data: stepDone }] =
+      await Promise.all([
+        db
+          .from("tasks")
+          .select("id, title, due_date, due_time, recurrence, recurrence_days")
+          .eq("user_id", userId)
+          .eq("is_archived", false)
+          .is("parent_id", null),
+        db.from("task_completions").select("task_id").eq("user_id", userId).eq("completed_on", day),
+        db.from("routines").select("id, name, window_end, days").eq("user_id", userId).eq("is_active", true),
+        db.from("routine_steps").select("id, routine_id").eq("user_id", userId),
+        db.from("routine_step_completions").select("step_id").eq("user_id", userId).eq("completed_on", day),
+      ]);
+
+    const doneTaskIds = new Set((taskDone ?? []).map((c: any) => c.task_id));
+    const doneStepIds = new Set((stepDone ?? []).map((c: any) => c.step_id));
+    const todayTasks = (tasks ?? []).filter((t: any) => dueToday(t, day, weekday));
+    const openTasks = todayTasks.filter((t: any) => !doneTaskIds.has(t.id));
+    const missedTasks = (tasks ?? []).filter(
+      (t: any) => t.recurrence === "none" && t.due_date && t.due_date < day && !doneTaskIds.has(t.id),
+    );
+    const activeRoutines = (routines ?? []).filter((r: any) => (r.days ?? []).includes(weekday));
+
+    const copy = toneCopy((settings.tone ?? "varm") as Tone);
+    const reminders: Reminder[] = [];
+
+    if (settings.morning_enabled && justPassed(minutes, toMinutes(settings.morning_time), 60)) {
+      const c = copy.morning(openTasks.length);
+      reminders.push({ kind: "morning", payload: { ...c, url: "/idag", tag: "morning" } });
+    }
+
+    if (settings.evening_enabled && justPassed(minutes, toMinutes(settings.evening_time), 60)) {
+      const openSteps = activeRoutines.reduce(
+        (n: number, r: any) =>
+          n + (steps ?? []).filter((s: any) => s.routine_id === r.id && !doneStepIds.has(s.id)).length,
+        0,
+      );
+      const c = copy.evening(openTasks.length + openSteps);
+      reminders.push({ kind: "evening", payload: { ...c, url: "/idag", tag: "evening" } });
+    }
+
+    if (settings.routine_reminders) {
+      for (const r of activeRoutines) {
+        const openSteps = (steps ?? []).filter((s: any) => s.routine_id === r.id && !doneStepIds.has(s.id));
+        if (openSteps.length === 0) continue;
+        const target = Math.max(0, toMinutes(r.window_end) - 45);
+        if (!justPassed(minutes, target, 45)) continue;
+        const c = copy.routine(r.name);
+        reminders.push({ kind: `routine:${r.id}`, payload: { ...c, url: "/idag", tag: `routine-${r.id}` } });
+      }
+    }
+
+    if (settings.missed_nudges && missedTasks.length > 0 && justPassed(minutes, 12 * 60, 120)) {
+      const c = copy.missed(missedTasks.length);
+      reminders.push({ kind: "missed", payload: { ...c, url: "/idag", tag: "missed" } });
+    }
+
+    if (reminders.length === 0) continue;
+
+    const { data: subs } = await db
+      .from("push_subscriptions")
+      .select("id, endpoint, p256dh, auth")
+      .eq("user_id", userId);
+
+    for (const reminder of reminders) {
+      // Ett utskick per typ och dag – raden i reminder_sends är låset.
+      const { error: lockError } = await db
+        .from("reminder_sends")
+        .insert({ user_id: userId, kind: reminder.kind, day });
+      if (lockError) continue;
+      result.sent += 1;
+
+      if (settings.inapp_enabled) {
+        await db.from("notifications").insert({
+          user_id: userId,
+          title: reminder.payload.title,
+          body: reminder.payload.body ?? null,
+          kind: reminder.kind.startsWith("routine") ? "routine" : reminder.kind,
+        });
+      }
+
+      if (settings.push_enabled) {
+        for (const sub of subs ?? []) {
+          const res = await sendWebPush(sub as PushSubscription, reminder.payload);
+          if (res.ok) {
+            result.pushed += 1;
+          } else {
+            if (res.stale) await db.from("push_subscriptions").delete().eq("id", (sub as any).id);
+            else result.errors.push(`push ${res.status}: ${res.error}`.slice(0, 200));
+          }
+        }
+      }
+
+      const emailTo = settings.email_address || profile?.email;
+      if (settings.email_enabled && emailTo && !String(emailTo).endsWith(".local")) {
+        const res = await sendEmail(
+          emailTo,
+          reminder.payload.title,
+          `${reminder.payload.body ?? ""}\n\nÖppna Dagsform: ${process.env["APP_URL"] ?? "https://dagsform.lovable.app"}/idag`,
+        );
+        if (res.ok) result.emailed += 1;
+        else result.errors.push(`mail: ${res.error}`.slice(0, 200));
+      }
+    }
+  }
+
+  return result;
+}
