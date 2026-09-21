@@ -108,7 +108,7 @@ function PlannedPage() {
       <div className="mt-4">
         <TaskComposer
           lists={lists}
-          defaultDay={tomorrow}
+          defaultDay={null}
           placeholder="Ny uppgift framåt…"
           onCreate={async (input) => {
             await createTaskFn({

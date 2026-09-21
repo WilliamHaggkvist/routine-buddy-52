@@ -288,7 +288,7 @@ function TodayPage() {
       <div className="mt-5">
         <TaskComposer
           lists={lists}
-          defaultDay={day}
+          defaultDay={null}
           placeholder="Lägg till något litet…"
           onCreate={async (input) => {
             await createTaskFn({
