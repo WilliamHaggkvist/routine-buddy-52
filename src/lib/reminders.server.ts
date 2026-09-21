@@ -102,7 +102,7 @@ export async function runReminders(now = new Date()) {
       await Promise.all([
         db
           .from("tasks")
-          .select("id, title, due_date, due_time, recurrence, recurrence_days")
+          .select("id, title, due_date, due_time")
           .eq("user_id", userId)
           .eq("is_archived", false)
           .is("parent_id", null),
