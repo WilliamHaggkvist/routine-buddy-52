@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { runReminders } from "@/lib/reminders.server";
 
 function authorized(request: Request) {
-  const secret = process.env["LOVABLE_CRON_SECRET"];
+  const secret = process.env["REMINDER_CRON_SECRET"];
   if (!secret) return false;
   const header = request.headers.get("x-cron-secret") ?? request.headers.get("authorization")?.replace("Bearer ", "");
   return header === secret;
