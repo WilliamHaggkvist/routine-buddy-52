@@ -202,7 +202,7 @@ export const createTask = createServerFn({ method: "POST" })
       dueTime?: string | null;
       listId?: string | null;
       parentId?: string | null;
-      priority?: number;
+      priority?: number | null;
     }) =>
       z
         .object({
@@ -211,7 +211,7 @@ export const createTask = createServerFn({ method: "POST" })
           dueTime: z.string().nullable().optional(),
           listId: z.string().uuid().nullable().optional(),
           parentId: z.string().uuid().nullable().optional(),
-          priority: z.number().min(1).max(3).optional(),
+          priority: z.number().min(1).max(3).nullable().optional(),
         })
         .parse(input),
   )
@@ -226,7 +226,7 @@ export const createTask = createServerFn({ method: "POST" })
         due_time: data.dueTime || null,
         list_id: data.listId ?? null,
         parent_id: data.parentId ?? null,
-        priority: data.priority ?? 2,
+        priority: data.priority ?? null,
       })
       .select("id")
       .single();
