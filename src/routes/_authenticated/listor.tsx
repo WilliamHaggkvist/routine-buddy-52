@@ -6,8 +6,11 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/BottomNav";
 import { CheckRow } from "@/components/CheckRow";
+import { TaskComposer } from "@/components/TaskComposer";
+import { TaskSheet } from "@/components/TaskSheet";
 import { useDashboard, useRefreshDashboard } from "@/hooks/useDashboard";
 import { createTask, deleteList, deleteTask, saveList, toggleTask, updateTask } from "@/lib/app.functions";
+import { humanDate, recurrenceLabel, shortTime } from "@/lib/day";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -37,15 +40,18 @@ function ListsPage() {
   const saveListFn = useServerFn(saveList);
   const deleteListFn = useServerFn(deleteList);
 
-  const [active, setActive] = useState<string | "alla">("alla");
+  const [active, setActive] = useState<string | "alla" | "inkorg">("alla");
   const [newList, setNewList] = useState("");
-  const [newTask, setNewTask] = useState("");
   const [filter, setFilter] = useState<number | null>(null);
+  const [sheetId, setSheetId] = useState<string | null>(null);
 
   const lists = data?.lists ?? [];
-  const tasks = (data?.tasks ?? []).filter((t: any) => !t.done || t.bucket === "today");
+  const tasks = (data?.tasks ?? []).filter((t: any) => !t.parent_id && (!t.done || t.bucket === "today"));
+  const sheetTask = (data?.tasks ?? []).find((t: any) => t.id === sheetId) ?? null;
+
   const visible = tasks.filter((t: any) => {
-    if (active !== "alla" && t.list_id !== active) return false;
+    if (active === "inkorg" && t.list_id) return false;
+    if (active !== "alla" && active !== "inkorg" && t.list_id !== active) return false;
     if (filter && (t.estimate_minutes ?? 999) > filter) return false;
     return true;
   });
@@ -66,6 +72,16 @@ function ListsPage() {
         >
           Allt
         </button>
+        <button
+          type="button"
+          onClick={() => setActive("inkorg")}
+          className={cn(
+            "min-h-11 shrink-0 rounded-2xl px-4 text-sm font-bold",
+            active === "inkorg" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground",
+          )}
+        >
+          📥 Inkorg
+        </button>
         {lists.map((l: any) => (
           <button
             key={l.id}
@@ -82,7 +98,7 @@ function ListsPage() {
       </div>
 
       <div className="mt-3 flex gap-2">
-        <span className="text-xs font-bold tracking-wide text-muted-foreground uppercase self-center">Orkar:</span>
+        <span className="self-center text-xs font-bold tracking-wide text-muted-foreground uppercase">Orkar:</span>
         {ESTIMATES.map((m) => (
           <button
             key={m}
@@ -98,35 +114,27 @@ function ListsPage() {
         ))}
       </div>
 
-      <div className="mt-4 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
-        <Input
-          value={newTask}
-          onChange={(e) => setNewTask(e.target.value)}
-          onKeyDown={async (e) => {
-            if (e.key !== "Enter") return;
-            const title = newTask.trim();
-            if (!title) return;
-            setNewTask("");
-            await createTaskFn({ data: { title, listId: active === "alla" ? null : active } });
-            refresh();
-          }}
+      <div className="mt-4">
+        <TaskComposer
+          lists={lists}
+          defaultDay={null}
+          defaultListId={active === "alla" || active === "inkorg" ? null : active}
           placeholder="Ny uppgift i listan"
-          className="h-14 rounded-2xl text-base"
-        />
-        <button
-          type="button"
-          aria-label="Lägg till uppgift"
-          onClick={async () => {
-            const title = newTask.trim();
-            if (!title) return;
-            setNewTask("");
-            await createTaskFn({ data: { title, listId: active === "alla" ? null : active } });
+          onCreate={async (input) => {
+            await createTaskFn({
+              data: {
+                title: input.title,
+                day: input.day,
+                dueTime: input.dueTime,
+                listId: input.listId,
+                estimateMinutes: input.estimateMinutes,
+                recurrence: input.recurrence,
+                recurrenceDays: input.recurrenceDays,
+              },
+            });
             refresh();
           }}
-          className="grid size-14 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground active:scale-95"
-        >
-          <Plus className="size-6" strokeWidth={2.5} />
-        </button>
+        />
       </div>
 
       <div className="mt-4 space-y-2">
@@ -139,10 +147,13 @@ function ListsPage() {
               await toggleTaskFn({ data: { taskId: t.id, day, done: !t.done } });
               refresh();
             }}
+            onOpen={() => setSheetId(t.id)}
             meta={[
-              t.due_date ? (t.due_date === day ? "Idag" : t.due_date) : null,
-              t.recurrence !== "none" ? "Återkommer" : null,
+              humanDate(t.due_date, day),
+              shortTime(t.due_time),
+              recurrenceLabel(t.recurrence, t.recurrence_days),
               t.estimate_minutes ? `${t.estimate_minutes} min` : null,
+              active === "alla" ? (lists.find((l: any) => l.id === t.list_id)?.name ?? "Inkorg") : null,
             ]
               .filter(Boolean)
               .join(" · ")}
@@ -184,12 +195,20 @@ function ListsPage() {
       </div>
 
       <div className="mt-8 rounded-3xl border border-border bg-card p-4">
-        <h2 className="text-sm font-bold text-foreground">Dina listor</h2>
+        <h2 className="text-xs font-bold tracking-wide text-muted-foreground uppercase">Mina listor</h2>
         <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
           <Input
             value={newList}
             onChange={(e) => setNewList(e.target.value)}
-            placeholder="Ny lista"
+            onKeyDown={async (e) => {
+              if (e.key !== "Enter") return;
+              const name = newList.trim();
+              if (!name) return;
+              setNewList("");
+              await saveListFn({ data: { name } });
+              refresh();
+            }}
+            placeholder="Ny lista, t.ex. Handla"
             className="h-12 rounded-xl"
           />
           <button
@@ -210,14 +229,15 @@ function ListsPage() {
         <div className="mt-3 space-y-2">
           {lists.map((l: any) => (
             <div key={l.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-              <span className="truncate text-sm text-foreground">
+              <span className="truncate text-sm font-semibold text-foreground">
                 {l.emoji} {l.name}
               </span>
               <button
                 type="button"
-                aria-label={`Ta bort ${l.name}`}
+                aria-label={`Ta bort listan ${l.name}`}
                 onClick={async () => {
                   await deleteListFn({ data: { id: l.id } });
+                  toast("Listan är borta – uppgifterna ligger kvar i Inkorg");
                   refresh();
                 }}
                 className="grid size-10 shrink-0 place-items-center rounded-xl bg-secondary text-destructive"
@@ -226,8 +246,11 @@ function ListsPage() {
               </button>
             </div>
           ))}
+          {lists.length === 0 ? <p className="text-sm text-muted-foreground">Du har inga listor än.</p> : null}
         </div>
       </div>
+
+      <TaskSheet task={sheetTask} lists={lists} day={day} onClose={() => setSheetId(null)} onChanged={refresh} />
     </AppShell>
   );
 }

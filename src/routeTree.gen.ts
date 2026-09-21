@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedIdagRouteImport } from './routes/_authenticated/idag'
 import { Route as AuthenticatedJagRouteImport } from './routes/_authenticated/jag'
 import { Route as AuthenticatedListorRouteImport } from './routes/_authenticated/listor'
+import { Route as AuthenticatedPlaneratRouteImport } from './routes/_authenticated/planerat'
 import { Route as AuthenticatedRutinerRouteImport } from './routes/_authenticated/rutiner'
 import { Route as ApiPublicRemindersRouteImport } from './routes/api/public/reminders'
 
@@ -47,6 +48,11 @@ const AuthenticatedListorRoute = AuthenticatedListorRouteImport.update({
   path: '/listor',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPlaneratRoute = AuthenticatedPlaneratRouteImport.update({
+  id: '/planerat',
+  path: '/planerat',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedRutinerRoute = AuthenticatedRutinerRouteImport.update({
   id: '/rutiner',
   path: '/rutiner',
@@ -64,6 +70,7 @@ export interface FileRoutesByFullPath {
   '/idag': typeof AuthenticatedIdagRoute
   '/jag': typeof AuthenticatedJagRoute
   '/listor': typeof AuthenticatedListorRoute
+  '/planerat': typeof AuthenticatedPlaneratRoute
   '/rutiner': typeof AuthenticatedRutinerRoute
   '/api/public/reminders': typeof ApiPublicRemindersRoute
 }
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/idag': typeof AuthenticatedIdagRoute
   '/jag': typeof AuthenticatedJagRoute
   '/listor': typeof AuthenticatedListorRoute
+  '/planerat': typeof AuthenticatedPlaneratRoute
   '/rutiner': typeof AuthenticatedRutinerRoute
   '/api/public/reminders': typeof ApiPublicRemindersRoute
 }
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/_authenticated/idag': typeof AuthenticatedIdagRoute
   '/_authenticated/jag': typeof AuthenticatedJagRoute
   '/_authenticated/listor': typeof AuthenticatedListorRoute
+  '/_authenticated/planerat': typeof AuthenticatedPlaneratRoute
   '/_authenticated/rutiner': typeof AuthenticatedRutinerRoute
   '/api/public/reminders': typeof ApiPublicRemindersRoute
 }
@@ -95,6 +104,7 @@ export interface FileRouteTypes {
     | '/idag'
     | '/jag'
     | '/listor'
+    | '/planerat'
     | '/rutiner'
     | '/api/public/reminders'
   fileRoutesByTo: FileRoutesByTo
@@ -104,6 +114,7 @@ export interface FileRouteTypes {
     | '/idag'
     | '/jag'
     | '/listor'
+    | '/planerat'
     | '/rutiner'
     | '/api/public/reminders'
   id:
@@ -114,6 +125,7 @@ export interface FileRouteTypes {
     | '/_authenticated/idag'
     | '/_authenticated/jag'
     | '/_authenticated/listor'
+    | '/_authenticated/planerat'
     | '/_authenticated/rutiner'
     | '/api/public/reminders'
   fileRoutesById: FileRoutesById
@@ -169,6 +181,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedListorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/planerat': {
+      id: '/_authenticated/planerat'
+      path: '/planerat'
+      fullPath: '/planerat'
+      preLoaderRoute: typeof AuthenticatedPlaneratRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/rutiner': {
       id: '/_authenticated/rutiner'
       path: '/rutiner'
@@ -190,6 +209,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedIdagRoute: typeof AuthenticatedIdagRoute
   AuthenticatedJagRoute: typeof AuthenticatedJagRoute
   AuthenticatedListorRoute: typeof AuthenticatedListorRoute
+  AuthenticatedPlaneratRoute: typeof AuthenticatedPlaneratRoute
   AuthenticatedRutinerRoute: typeof AuthenticatedRutinerRoute
 }
 
@@ -197,6 +217,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIdagRoute: AuthenticatedIdagRoute,
   AuthenticatedJagRoute: AuthenticatedJagRoute,
   AuthenticatedListorRoute: AuthenticatedListorRoute,
+  AuthenticatedPlaneratRoute: AuthenticatedPlaneratRoute,
   AuthenticatedRutinerRoute: AuthenticatedRutinerRoute,
 }
 

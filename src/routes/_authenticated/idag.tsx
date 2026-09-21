@@ -1,29 +1,28 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { ChevronDown, Flame, Plus, Sunrise, X } from "lucide-react";
-import { toast } from "sonner";
-
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { ChevronDown, Flame, Sunrise, X } from "lucide-react";
+import { toast } from "sonner";
 
 import { AppShell } from "@/components/BottomNav";
 import { LocalReminders } from "@/components/LocalReminders";
 import { CheckRow } from "@/components/CheckRow";
 import { ProgressRing } from "@/components/ProgressRing";
+import { TaskComposer } from "@/components/TaskComposer";
+import { TaskSheet } from "@/components/TaskSheet";
 import { useDashboard, useRefreshDashboard } from "@/hooks/useDashboard";
 import { createTask, getSettings, markNudgeRead, pushNudge, toggleStep, toggleTask, updateTask } from "@/lib/app.functions";
-import { greeting, isSoon, last7Days, shortTime, WEEKDAY_LABELS } from "@/lib/day";
-import { Input } from "@/components/ui/input";
+import { greeting, humanDate, isSoon, last7Days, recurrenceLabel, shortTime, WEEKDAY_LABELS } from "@/lib/day";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/idag")({
   head: () => ({
     meta: [
       { title: "Idag – Dagsform" },
-      { name: "description", content: "Dagens uppgifter och rutiner med visuell progress och streak." },
+      { name: "description", content: "Dagens rutiner och uppgifter i tidsordning, med visuell progress och streak." },
       { property: "og:title", content: "Idag – Dagsform" },
-      { property: "og:description", content: "Dagens uppgifter och rutiner med visuell progress." },
+      { property: "og:description", content: "Dagens rutiner och uppgifter i tidsordning." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -43,6 +42,10 @@ function Section({ title, count, children }: { title: string; count?: number; ch
   );
 }
 
+type Item =
+  | { kind: "task"; time: string | null; task: any }
+  | { kind: "routine"; time: string | null; routine: any };
+
 function TodayPage() {
   const { data, isLoading, day } = useDashboard();
   const refresh = useRefreshDashboard();
@@ -59,19 +62,34 @@ function TodayPage() {
     staleTime: 60_000,
   });
 
-  const [newTitle, setNewTitle] = useState("");
   const [open, setOpen] = useState<Record<string, boolean>>({});
+  const [sheetId, setSheetId] = useState<string | null>(null);
+  const [showDone, setShowDone] = useState(false);
 
   const week = useMemo(() => last7Days(), []);
   const summaries = new Map((data?.summaries ?? []).map((s: any) => [s.day, s]));
 
   const tasks = data?.tasks ?? [];
+  const lists = data?.lists ?? [];
   const todayTasks = tasks.filter((t: any) => t.bucket === "today");
-  const nu = todayTasks.filter((t: any) => !t.done && isSoon(t.due_time));
-  const senare = todayTasks.filter((t: any) => !t.done && !isSoon(t.due_time));
-  const klara = todayTasks.filter((t: any) => t.done);
   const missade = tasks.filter((t: any) => t.bucket === "missed");
   const routines = (data?.routines ?? []).filter((r: any) => r.activeToday);
+  const sheetTask = tasks.find((t: any) => t.id === sheetId) ?? null;
+
+  const timed: Item[] = [
+    ...todayTasks
+      .filter((t: any) => !t.done && t.due_time)
+      .map((t: any) => ({ kind: "task" as const, time: shortTime(t.due_time), task: t })),
+    ...routines
+      .filter((r: any) => !(r.steps.length > 0 && r.doneCount >= r.steps.length))
+      .map((r: any) => ({ kind: "routine" as const, time: shortTime(r.window_start), routine: r })),
+  ].sort((a, b) => (a.time ?? "99:99").localeCompare(b.time ?? "99:99"));
+
+  const nu = timed.filter((i) => isSoon(i.time));
+  const senare = timed.filter((i) => !isSoon(i.time));
+  const nagon_gang = todayTasks.filter((t: any) => !t.done && !t.due_time);
+  const klaraTasks = todayTasks.filter((t: any) => t.done);
+  const klaraRoutines = routines.filter((r: any) => r.steps.length > 0 && r.doneCount >= r.steps.length);
 
   async function onToggleTask(t: any) {
     await toggleTaskFn({ data: { taskId: t.id, day, done: !t.done } });
@@ -81,14 +99,6 @@ function TodayPage() {
 
   async function onToggleStep(routineId: string, s: any) {
     await toggleStepFn({ data: { stepId: s.id, routineId, day, done: !s.done } });
-    refresh();
-  }
-
-  async function add() {
-    const title = newTitle.trim();
-    if (!title) return;
-    setNewTitle("");
-    await createTaskFn({ data: { title, day } });
     refresh();
   }
 
@@ -125,6 +135,75 @@ function TodayPage() {
   const progress = data?.progress ?? { done: 0, total: 0 };
   const complete = progress.total > 0 && progress.done >= progress.total;
 
+  function taskMeta(t: any) {
+    return [
+      shortTime(t.due_time),
+      t.estimate_minutes ? `${t.estimate_minutes} min` : null,
+      recurrenceLabel(t.recurrence, t.recurrence_days),
+      (t.children ?? []).length > 0
+        ? `${(t.children ?? []).filter((c: any) => c.done).length}/${(t.children ?? []).length} delsteg`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+  }
+
+  function RoutineCard({ r }: { r: any }) {
+    const isOpen = open[r.id] ?? r.doneCount < r.steps.length;
+    const allDone = r.steps.length > 0 && r.doneCount >= r.steps.length;
+    return (
+      <div className="overflow-hidden rounded-3xl border border-border bg-card">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => ({ ...o, [r.id]: !isOpen }))}
+          className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-3 py-3 text-left"
+        >
+          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-secondary text-xl">{r.emoji}</span>
+          <span className="min-w-0">
+            <span className="block truncate font-semibold text-foreground">{r.name}</span>
+            <span className="text-xs text-muted-foreground">
+              {shortTime(r.window_start)}–{shortTime(r.window_end)} · {r.doneCount}/{r.steps.length} klara
+            </span>
+            <span className="mt-2 block h-2 w-full overflow-hidden rounded-full bg-secondary">
+              <span
+                className={cn("block h-full rounded-full transition-all", allDone ? "bg-success" : "bg-primary")}
+                style={{ width: `${r.steps.length ? (r.doneCount / r.steps.length) * 100 : 0}%` }}
+              />
+            </span>
+          </span>
+          <ChevronDown
+            className={cn("size-5 shrink-0 text-muted-foreground transition-transform", isOpen && "rotate-180")}
+          />
+        </button>
+        {isOpen ? (
+          <div className="space-y-2 px-3 pb-3">
+            {r.steps.map((st: any) => (
+              <CheckRow key={st.id} size="sm" title={st.title} done={st.done} onToggle={() => onToggleStep(r.id, st)} />
+            ))}
+            {r.steps.length === 0 ? (
+              <p className="px-1 pb-2 text-sm text-muted-foreground">Inga steg än – lägg till under Rutiner.</p>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  function renderItem(i: Item) {
+    if (i.kind === "routine") return <RoutineCard key={`r-${i.routine.id}`} r={i.routine} />;
+    const t = i.task;
+    return (
+      <CheckRow
+        key={`t-${t.id}`}
+        title={t.title}
+        done={t.done}
+        onToggle={() => onToggleTask(t)}
+        onOpen={() => setSheetId(t.id)}
+        meta={taskMeta(t)}
+      />
+    );
+  }
+
   return (
     <AppShell>
       <LocalReminders settings={s} progress={progress} routines={routines} />
@@ -156,9 +235,12 @@ function TodayPage() {
 
         <div className="mt-4 grid w-full grid-cols-7 gap-1">
           {week.map((d) => {
-            const s = summaries.get(d) as any;
+            const sum = summaries.get(d) as any;
             const isToday = d === day;
-            const ratio = s && s.tasks_total + s.steps_total > 0 ? (s.tasks_done + s.steps_done) / (s.tasks_total + s.steps_total) : 0;
+            const ratio =
+              sum && sum.tasks_total + sum.steps_total > 0
+                ? (sum.tasks_done + sum.steps_done) / (sum.tasks_total + sum.steps_total)
+                : 0;
             return (
               <div key={d} className="flex flex-col items-center gap-1">
                 <div
@@ -168,7 +250,7 @@ function TodayPage() {
                   )}
                 >
                   <div
-                    className={cn("w-full", s?.completed ? "bg-success" : "bg-primary/60")}
+                    className={cn("w-full", sum?.completed ? "bg-success" : "bg-primary/60")}
                     style={{ height: `${Math.round(ratio * 100)}%` }}
                   />
                 </div>
@@ -209,96 +291,42 @@ function TodayPage() {
         </div>
       ) : null}
 
-      <div className="mt-5 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
-        <Input
-          value={newTitle}
-          onChange={(e) => setNewTitle(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") void add();
-          }}
+      <div className="mt-5">
+        <TaskComposer
+          lists={lists}
+          defaultDay={day}
           placeholder="Lägg till något litet…"
-          className="h-14 rounded-2xl text-base"
+          onCreate={async (input) => {
+            await createTaskFn({
+              data: {
+                title: input.title,
+                day: input.day,
+                dueTime: input.dueTime,
+                listId: input.listId,
+                estimateMinutes: input.estimateMinutes,
+                recurrence: input.recurrence,
+                recurrenceDays: input.recurrenceDays,
+              },
+            });
+            refresh();
+          }}
         />
-        <button
-          type="button"
-          onClick={add}
-          aria-label="Lägg till"
-          className="grid size-14 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground active:scale-95"
-        >
-          <Plus className="size-6" strokeWidth={2.5} />
-        </button>
       </div>
 
-      {routines.length > 0 ? (
-        <Section title="Rutiner idag">
-          {routines.map((r: any) => {
-            const isOpen = open[r.id] ?? r.doneCount < r.steps.length;
-            const allDone = r.steps.length > 0 && r.doneCount >= r.steps.length;
-            return (
-              <div key={r.id} className="overflow-hidden rounded-3xl border border-border bg-card">
-                <button
-                  type="button"
-                  onClick={() => setOpen((o) => ({ ...o, [r.id]: !isOpen }))}
-                  className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-3 py-3 text-left"
-                >
-                  <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-secondary text-xl">
-                    {r.emoji}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate font-semibold text-foreground">{r.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {shortTime(r.window_start)}–{shortTime(r.window_end)} · {r.doneCount}/{r.steps.length} klara
-                    </span>
-                    <span className="mt-2 block h-2 w-full overflow-hidden rounded-full bg-secondary">
-                      <span
-                        className={cn("block h-full rounded-full transition-all", allDone ? "bg-success" : "bg-primary")}
-                        style={{ width: `${r.steps.length ? (r.doneCount / r.steps.length) * 100 : 0}%` }}
-                      />
-                    </span>
-                  </span>
-                  <ChevronDown className={cn("size-5 shrink-0 text-muted-foreground transition-transform", isOpen && "rotate-180")} />
-                </button>
-                {isOpen ? (
-                  <div className="space-y-2 px-3 pb-3">
-                    {r.steps.map((s: any) => (
-                      <CheckRow key={s.id} size="sm" title={s.title} done={s.done} onToggle={() => onToggleStep(r.id, s)} />
-                    ))}
-                    {r.steps.length === 0 ? (
-                      <p className="px-1 pb-2 text-sm text-muted-foreground">Inga steg än – lägg till under Rutiner.</p>
-                    ) : null}
-                  </div>
-                ) : null}
-              </div>
-            );
-          })}
-        </Section>
-      ) : null}
+      {nu.length > 0 ? <Section title="Nu">{nu.map(renderItem)}</Section> : null}
 
-      {nu.length > 0 ? (
-        <Section title="Nu">
-          {nu.map((t: any) => (
+      {senare.length > 0 ? <Section title="Senare idag">{senare.map(renderItem)}</Section> : null}
+
+      {nagon_gang.length > 0 ? (
+        <Section title="När som helst idag">
+          {nagon_gang.map((t: any) => (
             <CheckRow
               key={t.id}
               title={t.title}
               done={t.done}
               onToggle={() => onToggleTask(t)}
-              meta={[shortTime(t.due_time), t.estimate_minutes ? `${t.estimate_minutes} min` : null]
-                .filter(Boolean)
-                .join(" · ")}
-            />
-          ))}
-        </Section>
-      ) : null}
-
-      {senare.length > 0 ? (
-        <Section title="Senare idag">
-          {senare.map((t: any) => (
-            <CheckRow
-              key={t.id}
-              title={t.title}
-              done={t.done}
-              onToggle={() => onToggleTask(t)}
-              meta={shortTime(t.due_time)}
+              onOpen={() => setSheetId(t.id)}
+              meta={taskMeta(t)}
             />
           ))}
         </Section>
@@ -313,7 +341,8 @@ function TodayPage() {
               title={t.title}
               done={false}
               onToggle={() => onToggleTask(t)}
-              meta={`Låg kvar från ${t.due_date}`}
+              onOpen={() => setSheetId(t.id)}
+              meta={`Låg kvar från ${humanDate(t.due_date, day)}`}
               trailing={
                 <div className="flex gap-1">
                   <button
@@ -337,13 +366,38 @@ function TodayPage() {
         </Section>
       ) : null}
 
-      {klara.length > 0 ? (
-        <Section title="Klart" count={klara.length}>
-          {klara.map((t: any) => (
-            <CheckRow key={t.id} title={t.title} done onToggle={() => onToggleTask(t)} />
-          ))}
-        </Section>
+      {klaraTasks.length + klaraRoutines.length > 0 ? (
+        <section className="mt-6">
+          <button
+            type="button"
+            onClick={() => setShowDone(!showDone)}
+            className="flex min-h-11 w-full items-center justify-between px-1"
+          >
+            <span className="text-xs font-bold tracking-[0.12em] text-muted-foreground uppercase">
+              Klart idag ({klaraTasks.length + klaraRoutines.length})
+            </span>
+            <ChevronDown className={cn("size-5 text-muted-foreground transition-transform", showDone && "rotate-180")} />
+          </button>
+          {showDone ? (
+            <div className="mt-2 space-y-2">
+              {klaraRoutines.map((r: any) => (
+                <RoutineCard key={r.id} r={r} />
+              ))}
+              {klaraTasks.map((t: any) => (
+                <CheckRow key={t.id} title={t.title} done onToggle={() => onToggleTask(t)} onOpen={() => setSheetId(t.id)} />
+              ))}
+            </div>
+          ) : null}
+        </section>
       ) : null}
+
+      <TaskSheet
+        task={sheetTask}
+        lists={lists}
+        day={day}
+        onClose={() => setSheetId(null)}
+        onChanged={refresh}
+      />
     </AppShell>
   );
 }
