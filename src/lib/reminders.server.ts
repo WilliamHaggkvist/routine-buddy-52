@@ -156,6 +156,30 @@ export async function runReminders(now = new Date()) {
       }
     }
 
+    if (settings.task_reminders !== false) {
+      // Uppgifter med klockslag eller tidsdel: en notis per tidpunkt, alla uppgifter i samma notis.
+      const groups = new Map<string, { time: string; band: string | null; titles: string[] }>();
+      for (const t of openTasks) {
+        const time = effectiveTime(t);
+        if (!time) continue;
+        const key = t.time_band ? `band:${t.time_band}` : `time:${time}`;
+        const g = groups.get(key) ?? { time, band: t.time_band ?? null, titles: [] };
+        g.titles.push(t.title);
+        groups.set(key, g);
+      }
+      for (const [key, g] of groups) {
+        if (!justPassed(minutes, toMinutes(g.time), 15)) continue;
+        const label = bandName(g.band) ?? `kl ${g.time}`;
+        const n = g.titles.length;
+        const title = n === 1 ? g.titles[0]! : `${n} uppgifter · ${label}`;
+        const body =
+          n > 5
+            ? `Du har fler än 5 uppgifter att ta dig an på ${label.toLowerCase()}. Börja med en.`
+            : g.titles.join(" · ");
+        reminders.push({ kind: `tasks:${key}`, payload: { title, body, url: "/idag", tag: `tasks-${key}` } });
+      }
+    }
+
     if (settings.missed_nudges && missedTasks.length > 0 && justPassed(minutes, 12 * 60, 120)) {
       const c = copy.missed(missedTasks.length);
       reminders.push({ kind: "missed", payload: { ...c, url: "/idag", tag: "missed" } });
