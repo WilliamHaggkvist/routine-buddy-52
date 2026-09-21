@@ -41,6 +41,7 @@ function PlannedPage() {
   const tomorrow = addDays(day, 1);
   const weekEnd = addDays(day, 7);
 
+  const forsenade = tasks.filter((t: any) => t.due_date && t.due_date < day && !t.done);
   const imorgon = tasks.filter((t: any) => t.due_date === tomorrow && !t.done);
   const veckan = tasks.filter((t: any) => t.due_date && t.due_date > tomorrow && t.due_date <= weekEnd && !t.done);
   const senare = tasks.filter((t: any) => t.due_date && t.due_date > weekEnd && !t.done);
@@ -126,6 +127,42 @@ function PlannedPage() {
           }}
         />
       </div>
+
+      {forsenade.length > 0 ? (
+        <section className="mt-6 rounded-3xl border border-destructive/30 bg-destructive/5 p-3">
+          <h2 className="mb-2 px-1 text-xs font-bold tracking-[0.12em] text-destructive uppercase">
+            Försenat ({forsenade.length})
+          </h2>
+          <div className="space-y-2">
+            {forsenade
+              .slice()
+              .sort((a, b) => `${a.due_date}${taskTime(a) ?? "99:99"}`.localeCompare(`${b.due_date}${taskTime(b) ?? "99:99"}`))
+              .map((t: any) => (
+                <CheckRow
+                  key={t.id}
+                  tone="missed"
+                  title={t.title}
+                  done={false}
+                  onToggle={async () => {
+                    await toggleTaskFn({ data: { taskId: t.id, day, done: true } });
+                    refresh();
+                  }}
+                  onOpen={() => setSheetId(t.id)}
+                  meta={`Låg kvar från ${humanDate(t.due_date, day)}`}
+                  trailing={
+                    <button
+                      type="button"
+                      onClick={() => moveToToday(t)}
+                      className="min-h-10 rounded-xl bg-primary px-3 text-xs font-bold text-primary-foreground"
+                    >
+                      Idag
+                    </button>
+                  }
+                />
+              ))}
+          </div>
+        </section>
+      ) : null}
 
       <Group title="Imorgon" items={imorgon} />
       <Group title="Denna vecka" items={veckan} />
