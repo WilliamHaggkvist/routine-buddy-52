@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Bell, BellOff, Flame, LogOut, Sparkles } from "lucide-react";
+import { Bell, BellOff, Flame, LogOut } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/BottomNav";
@@ -62,7 +62,6 @@ function MePage() {
   const [name, setName] = useState<string | null>(null);
   const [currentPin, setCurrentPin] = useState("");
   const [newPin, setNewPin] = useState("");
-  const [email, setEmail] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function patch(p: Record<string, unknown>) {
@@ -132,20 +131,13 @@ function MePage() {
     <AppShell>
       <h1 className="font-display text-2xl text-foreground">Jag</h1>
 
-      <div className="mt-4 grid grid-cols-2 gap-3">
+      <div className="mt-4">
         <div className="rounded-3xl border border-border bg-card p-4">
           <p className="flex items-center gap-1 text-xs font-bold tracking-wide text-muted-foreground uppercase">
             <Flame className="size-4" /> Streak
           </p>
           <p className="mt-1 font-display text-3xl text-foreground">{data?.streak ?? 0}</p>
           <p className="text-xs text-muted-foreground">dagar i rad</p>
-        </div>
-        <div className="rounded-3xl border border-border bg-card p-4">
-          <p className="flex items-center gap-1 text-xs font-bold tracking-wide text-muted-foreground uppercase">
-            <Sparkles className="size-4" /> Poäng
-          </p>
-          <p className="mt-1 font-display text-3xl text-foreground">{data?.points ?? 0}</p>
-          <p className="text-xs text-muted-foreground">totalt</p>
         </div>
       </div>
 
@@ -163,7 +155,7 @@ function MePage() {
             className="h-12 w-40 rounded-xl"
           />
         </Row>
-        <Row label="E-post" hint="Används för påminnelser via mail">
+        <Row label="E-post" hint="Används om du glömmer din PIN-kod">
           <span className="max-w-40 truncate text-sm text-muted-foreground">{data?.profile?.email}</span>
         </Row>
       </section>
@@ -183,21 +175,6 @@ function MePage() {
             >
               Skicka test
             </button>
-          </Row>
-        ) : null}
-        <Row label="Påminnelser via e-post" hint="Morgonöversikt och kvällskoll i mailen">
-          <Switch checked={!!s?.email_enabled} onCheckedChange={(v) => patch({ email_enabled: v })} />
-        </Row>
-        {s?.email_enabled ? (
-          <Row label="Skicka mailen till" hint="Lämna tomt för att använda din inloggningsmail">
-            <Input
-              type="email"
-              value={email ?? s?.email_address ?? ""}
-              onChange={(e) => setEmail(e.target.value)}
-              onBlur={(e) => patch({ email_address: e.target.value.trim() || null })}
-              placeholder={data?.profile?.email ?? "din@mail.se"}
-              className="h-12 w-44 rounded-xl"
-            />
           </Row>
         ) : null}
         <Row label="Nudgar inne i appen" hint="Mjuka puffar när något ligger orört">

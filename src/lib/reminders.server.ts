@@ -81,25 +81,12 @@ function dueToday(
 
 type Reminder = { kind: string; payload: PushPayload };
 
-async function sendEmail(to: string, subject: string, text: string) {
-  const apiKey = process.env["RESEND_API_KEY"];
-  const from = process.env["REMINDER_EMAIL_FROM"] ?? "Dagsform <onboarding@resend.dev>";
-  if (!apiKey) return { ok: false, error: "RESEND_API_KEY saknas" };
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from, to: [to], subject, text }),
-  });
-  if (!res.ok) return { ok: false, error: `${res.status}: ${await res.text()}` };
-  return { ok: true as const };
-}
-
 export async function runReminders(now = new Date()) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const db = supabaseAdmin as any;
 
   const { data: allSettings } = await db.from("notification_settings").select("*");
-  const result = { users: 0, sent: 0, pushed: 0, emailed: 0, skipped: 0, errors: [] as string[] };
+  const result = { users: 0, sent: 0, pushed: 0, skipped: 0, errors: [] as string[] };
 
   for (const settings of allSettings ?? []) {
     const userId = settings.user_id as string;
@@ -210,16 +197,6 @@ export async function runReminders(now = new Date()) {
         }
       }
 
-      const emailTo = settings.email_address || profile?.email;
-      if (settings.email_enabled && emailTo && !String(emailTo).endsWith(".local")) {
-        const res = await sendEmail(
-          emailTo,
-          reminder.payload.title,
-          `${reminder.payload.body ?? ""}\n\nÖppna Dagsform: ${process.env["APP_URL"] ?? "https://dagsform.lovable.app"}/idag`,
-        );
-        if (res.ok) result.emailed += 1;
-        else result.errors.push(`mail: ${res.error}`.slice(0, 200));
-      }
     }
   }
 

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { ChevronDown, Flame, Plus, Sparkles, Sunrise, X } from "lucide-react";
+import { ChevronDown, Flame, Plus, Sunrise, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { useQuery } from "@tanstack/react-query";
@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/idag")({
   head: () => ({
     meta: [
       { title: "Idag – Dagsform" },
-      { name: "description", content: "Dagens uppgifter och rutiner med visuell progress, streak och poäng." },
+      { name: "description", content: "Dagens uppgifter och rutiner med visuell progress och streak." },
       { property: "og:title", content: "Idag – Dagsform" },
       { property: "og:description", content: "Dagens uppgifter och rutiner med visuell progress." },
       { property: "og:type", content: "website" },
@@ -75,7 +75,7 @@ function TodayPage() {
 
   async function onToggleTask(t: any) {
     await toggleTaskFn({ data: { taskId: t.id, day, done: !t.done } });
-    if (!t.done) toast.success("Snyggt! ✦ +5 poäng");
+    if (!t.done) toast.success("Snyggt! ✦");
     refresh();
   }
 
@@ -138,9 +138,6 @@ function TodayPage() {
         <div className="flex shrink-0 gap-2">
           <span className="inline-flex items-center gap-1 rounded-full bg-warm px-3 py-1.5 text-sm font-bold text-warm-foreground">
             <Flame className="size-4" /> {data?.streak ?? 0}
-          </span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-sm font-bold text-secondary-foreground">
-            <Sparkles className="size-4" /> {data?.points ?? 0}
           </span>
         </div>
       </header>
