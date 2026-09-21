@@ -4,11 +4,15 @@ import { useServerFn } from "@tanstack/react-start";
 import { ChevronDown, Flame, Plus, Sparkles, Sunrise, X } from "lucide-react";
 import { toast } from "sonner";
 
+import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+
 import { AppShell } from "@/components/BottomNav";
+import { LocalReminders } from "@/components/LocalReminders";
 import { CheckRow } from "@/components/CheckRow";
 import { ProgressRing } from "@/components/ProgressRing";
 import { useDashboard, useRefreshDashboard } from "@/hooks/useDashboard";
-import { createTask, markNudgeRead, toggleStep, toggleTask, updateTask } from "@/lib/app.functions";
+import { createTask, getSettings, markNudgeRead, pushNudge, toggleStep, toggleTask, updateTask } from "@/lib/app.functions";
 import { greeting, isSoon, last7Days, shortTime, WEEKDAY_LABELS } from "@/lib/day";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -47,6 +51,13 @@ function TodayPage() {
   const createTaskFn = useServerFn(createTask);
   const updateTaskFn = useServerFn(updateTask);
   const markRead = useServerFn(markNudgeRead);
+  const fetchSettings = useServerFn(getSettings);
+  const nudge = useServerFn(pushNudge);
+  const settings = useQuery({
+    queryKey: ["settings"],
+    queryFn: () => fetchSettings({ data: undefined as never }),
+    staleTime: 60_000,
+  });
 
   const [newTitle, setNewTitle] = useState("");
   const [open, setOpen] = useState<Record<string, boolean>>({});
@@ -93,11 +104,30 @@ function TodayPage() {
     refresh();
   }
 
+  const s = settings.data as any;
+
+  useEffect(() => {
+    if (!data || !s?.inapp_enabled || !s?.missed_nudges) return;
+    if (missade.length === 0) return;
+    const flag = `dagsform.missednudge.${day}`;
+    if (localStorage.getItem(flag)) return;
+    localStorage.setItem(flag, "1");
+    void nudge({
+      data: {
+        title: `${missade.length} sak${missade.length > 1 ? "er" : ""} ligger kvar`,
+        body: "Välj en att göra idag, eller släpp den. Båda är okej.",
+        kind: "missed",
+      },
+    }).then(() => refresh());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, s?.inapp_enabled, s?.missed_nudges, missade.length, day]);
+
   const progress = data?.progress ?? { done: 0, total: 0 };
   const complete = progress.total > 0 && progress.done >= progress.total;
 
   return (
     <AppShell>
+      <LocalReminders settings={s} progress={progress} routines={routines} />
       <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
         <div className="min-w-0">
           <p className="text-sm text-muted-foreground">{greeting()}</p>
