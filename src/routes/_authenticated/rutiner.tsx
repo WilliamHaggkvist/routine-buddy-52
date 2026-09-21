@@ -93,7 +93,7 @@ function RoutinesPage() {
 
       <div className="mt-5 space-y-4">
         {routines.map((r: any) => (
-          <div key={r.id} className="rounded-3xl border border-border bg-card p-3">
+          <div key={r.id} className="overflow-hidden rounded-3xl border border-border bg-card p-3">
             <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
               <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-secondary text-xl">{r.emoji}</span>
               <div className="min-w-0">
@@ -103,6 +103,7 @@ function RoutinesPage() {
                 </p>
               </div>
               <Switch
+                className="shrink-0"
                 checked={r.is_active}
                 onCheckedChange={async (v) => {
                   await saveRoutineFn({ data: { id: r.id, name: r.name, isActive: v } });
@@ -156,7 +157,7 @@ function RoutinesPage() {
               </label>
             </div>
 
-            <div className="mt-3 space-y-2">
+            <div className="mt-3 space-y-1.5">
               {r.steps.map((s: any) => (
                 <CheckRow
                   key={s.id}
