@@ -136,7 +136,9 @@ function PlannedPage() {
           <div className="space-y-2">
             {forsenade
               .slice()
-              .sort((a, b) => `${a.due_date}${taskTime(a) ?? "99:99"}`.localeCompare(`${b.due_date}${taskTime(b) ?? "99:99"}`))
+              .sort((a: any, b: any) =>
+                `${a.due_date}${taskTime(a) ?? "99:99"}`.localeCompare(`${b.due_date}${taskTime(b) ?? "99:99"}`),
+              )
               .map((t: any) => (
                 <CheckRow
                   key={t.id}
