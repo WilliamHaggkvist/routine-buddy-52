@@ -158,7 +158,7 @@ function ListsPage() {
             meta={[
               priorityLabel(t.priority),
               humanDate(t.due_date, day),
-              shortTime(t.due_time),
+              taskTimeLabel(t),
               active === "alla" ? (lists.find((l: any) => l.id === t.list_id)?.name ?? "Inkorg") : null,
             ]
               .filter(Boolean)

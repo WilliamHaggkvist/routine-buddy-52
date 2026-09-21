@@ -75,7 +75,7 @@ function PlannedPage() {
                 onOpen={() => setSheetId(t.id)}
                 meta={[
                   humanDate(t.due_date, day),
-                  shortTime(t.due_time),
+                  taskTimeLabel(t),
                   priorityLabel(t.priority),
                   lists.find((l: any) => l.id === t.list_id)?.name ?? null,
                 ]

@@ -13,7 +13,7 @@ import { TaskComposer } from "@/components/TaskComposer";
 import { TaskSheet } from "@/components/TaskSheet";
 import { useDashboard, useRefreshDashboard } from "@/hooks/useDashboard";
 import { createTask, getSettings, markNudgeRead, pushNudge, toggleStep, toggleTask, updateTask } from "@/lib/app.functions";
-import { currentWeekDays, greeting, humanDate, isSoon, priorityLabel, shortTime, WEEKDAY_LABELS_MON_SUN } from "@/lib/day";
+import { currentWeekDays, greeting, humanDate, isSoon, priorityLabel, shortTime, taskTime, taskTimeLabel, WEEKDAY_LABELS_MON_SUN } from "@/lib/day";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/idag")({
@@ -78,8 +78,8 @@ function TodayPage() {
 
   const timed: Item[] = [
     ...todayTasks
-      .filter((t: any) => !t.done && t.due_time)
-      .map((t: any) => ({ kind: "task" as const, time: shortTime(t.due_time), task: t })),
+      .filter((t: any) => !t.done && taskTime(t))
+      .map((t: any) => ({ kind: "task" as const, time: taskTime(t), task: t })),
     ...routines
       .filter((r: any) => !(r.steps.length > 0 && r.doneCount >= r.steps.length))
       .map((r: any) => ({ kind: "routine" as const, time: shortTime(r.window_start), routine: r })),
@@ -87,7 +87,7 @@ function TodayPage() {
 
   const nu = timed.filter((i) => isSoon(i.time));
   const senare = timed.filter((i) => !isSoon(i.time));
-  const nagon_gang = todayTasks.filter((t: any) => !t.done && !t.due_time);
+  const nagon_gang = todayTasks.filter((t: any) => !t.done && !taskTime(t));
   const klaraTasks = todayTasks.filter((t: any) => t.done);
   const klaraRoutines = routines.filter((r: any) => r.steps.length > 0 && r.doneCount >= r.steps.length);
 
@@ -136,7 +136,7 @@ function TodayPage() {
   const complete = progress.total > 0 && progress.done >= progress.total;
 
   function taskMeta(t: any) {
-    return [shortTime(t.due_time), priorityLabel(t.priority)]
+    return [taskTimeLabel(t), priorityLabel(t.priority)]
       .filter(Boolean)
       .join(" · ");
   }
@@ -296,6 +296,7 @@ function TodayPage() {
                 title: input.title,
                 day: input.day,
                 dueTime: input.dueTime,
+                timeBand: input.timeBand,
                 listId: input.listId,
                 priority: input.priority,
               },
