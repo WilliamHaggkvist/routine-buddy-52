@@ -172,7 +172,7 @@ export async function runReminders(now = new Date()) {
     if (settings.task_reminders !== false) {
       // Uppgifter med klockslag eller tidsdel: en notis per tidpunkt, alla uppgifter i samma notis.
       const groups = new Map<string, { time: string; band: string | null; titles: string[] }>();
-      for (const t of openTasks) {
+      for (const t of openTasks as any[]) {
         const time = effectiveTime(t);
         if (!time) continue;
         const key = t.time_band ? `band:${t.time_band}` : `time:${time}`;
