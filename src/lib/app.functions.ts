@@ -6,14 +6,7 @@ const daySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 type Ctx = { supabase: any; userId: string; claims: Record<string, unknown> };
 
-function dueToday(
-  task: { due_date: string | null; recurrence: string; recurrence_days: number[] | null },
-  day: string,
-  weekday: number,
-) {
-  if (task.recurrence === "daily") return true;
-  if (task.recurrence === "weekdays") return weekday >= 1 && weekday <= 5;
-  if (task.recurrence === "weekly") return (task.recurrence_days ?? []).includes(weekday);
+function dueToday(task: { due_date: string | null }, day: string) {
   return task.due_date === day;
 }
 
@@ -21,10 +14,11 @@ async function recomputeDay(ctx: Ctx, day: string) {
   const weekday = new Date(`${day}T12:00:00`).getDay();
   const { data: tasks } = await ctx.supabase
     .from("tasks")
-    .select("id, due_date, recurrence, recurrence_days")
+    .select("id, due_date")
     .eq("is_archived", false)
     .is("parent_id", null);
-  const todays = (tasks ?? []).filter((t: any) => dueToday(t, day, weekday));
+  const todays = (tasks ?? []).filter((t: any) => dueToday(t, day));
+
   const { data: taskDone } = await ctx.supabase
     .from("task_completions")
     .select("task_id")
@@ -113,14 +107,15 @@ export const getDashboard = createServerFn({ method: "POST" })
     const decorated = parents.map((t: any) => {
       const children = allTasks
         .filter((c: any) => c.parent_id === t.id)
-        .map((c: any) => ({ ...c, done: doneToday.has(c.id) || (c.recurrence === "none" && everDone.has(c.id)) }));
-      const done = doneToday.has(t.id) || (t.recurrence === "none" && !t.due_date && everDone.has(t.id)) || (t.recurrence === "none" && !!t.due_date && everDone.has(t.id));
+        .map((c: any) => ({ ...c, done: doneToday.has(c.id) || everDone.has(c.id) }));
+      const done = doneToday.has(t.id) || everDone.has(t.id);
       let bucket: "today" | "missed" | "later" | "backlog" = "backlog";
-      if (dueToday(t, day, weekday)) bucket = "today";
-      else if (t.recurrence === "none" && t.due_date && t.due_date < day && !everDone.has(t.id)) bucket = "missed";
-      else if (t.recurrence === "none" && t.due_date && t.due_date > day) bucket = "later";
+      if (dueToday(t, day)) bucket = "today";
+      else if (t.due_date && t.due_date < day && !everDone.has(t.id)) bucket = "missed";
+      else if (t.due_date && t.due_date > day) bucket = "later";
       return { ...t, children, done, bucket };
     });
+
 
     const stepDoneSet = new Set((stepDone ?? []).map((s: any) => s.step_id));
     const routineList = (routines ?? []).map((r: any) => {
@@ -207,9 +202,7 @@ export const createTask = createServerFn({ method: "POST" })
       dueTime?: string | null;
       listId?: string | null;
       parentId?: string | null;
-      recurrence?: string;
-      recurrenceDays?: number[];
-      estimateMinutes?: number | null;
+      priority?: number;
     }) =>
       z
         .object({
@@ -218,9 +211,7 @@ export const createTask = createServerFn({ method: "POST" })
           dueTime: z.string().nullable().optional(),
           listId: z.string().uuid().nullable().optional(),
           parentId: z.string().uuid().nullable().optional(),
-          recurrence: z.enum(["none", "daily", "weekdays", "weekly"]).optional(),
-          recurrenceDays: z.array(z.number().min(0).max(6)).optional(),
-          estimateMinutes: z.number().nullable().optional(),
+          priority: z.number().min(1).max(3).optional(),
         })
         .parse(input),
   )
@@ -235,12 +226,11 @@ export const createTask = createServerFn({ method: "POST" })
         due_time: data.dueTime || null,
         list_id: data.listId ?? null,
         parent_id: data.parentId ?? null,
-        recurrence: data.recurrence ?? "none",
-        recurrence_days: data.recurrenceDays ?? [],
-        estimate_minutes: data.estimateMinutes ?? null,
+        priority: data.priority ?? 2,
       })
       .select("id")
       .single();
+
     if (error) throw new Error(error.message);
     if (data.day) await recomputeDay(ctx, data.day);
     return row;

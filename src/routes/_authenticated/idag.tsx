@@ -13,7 +13,7 @@ import { TaskComposer } from "@/components/TaskComposer";
 import { TaskSheet } from "@/components/TaskSheet";
 import { useDashboard, useRefreshDashboard } from "@/hooks/useDashboard";
 import { createTask, getSettings, markNudgeRead, pushNudge, toggleStep, toggleTask, updateTask } from "@/lib/app.functions";
-import { greeting, humanDate, isSoon, last7Days, recurrenceLabel, shortTime, WEEKDAY_LABELS } from "@/lib/day";
+import { greeting, humanDate, isSoon, last7Days, priorityLabel, shortTime, WEEKDAY_LABELS } from "@/lib/day";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/idag")({
@@ -138,8 +138,7 @@ function TodayPage() {
   function taskMeta(t: any) {
     return [
       shortTime(t.due_time),
-      t.estimate_minutes ? `${t.estimate_minutes} min` : null,
-      recurrenceLabel(t.recurrence, t.recurrence_days),
+      priorityLabel(t.priority),
       (t.children ?? []).length > 0
         ? `${(t.children ?? []).filter((c: any) => c.done).length}/${(t.children ?? []).length} delsteg`
         : null,
@@ -147,6 +146,7 @@ function TodayPage() {
       .filter(Boolean)
       .join(" · ");
   }
+
 
   function RoutineCard({ r }: { r: any }) {
     const isOpen = open[r.id] ?? r.doneCount < r.steps.length;
@@ -303,11 +303,10 @@ function TodayPage() {
                 day: input.day,
                 dueTime: input.dueTime,
                 listId: input.listId,
-                estimateMinutes: input.estimateMinutes,
-                recurrence: input.recurrence,
-                recurrenceDays: input.recurrenceDays,
+                priority: input.priority,
               },
             });
+
             refresh();
           }}
         />

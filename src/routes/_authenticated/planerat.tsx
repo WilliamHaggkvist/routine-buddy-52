@@ -9,7 +9,7 @@ import { TaskComposer } from "@/components/TaskComposer";
 import { TaskSheet } from "@/components/TaskSheet";
 import { useDashboard, useRefreshDashboard } from "@/hooks/useDashboard";
 import { createTask, toggleTask, updateTask } from "@/lib/app.functions";
-import { addDays, humanDate, recurrenceLabel, shortTime } from "@/lib/day";
+import { addDays, humanDate, priorityLabel, shortTime } from "@/lib/day";
 
 export const Route = createFileRoute("/_authenticated/planerat")({
   head: () => ({
@@ -44,7 +44,7 @@ function PlannedPage() {
   const imorgon = tasks.filter((t: any) => t.due_date === tomorrow && !t.done);
   const veckan = tasks.filter((t: any) => t.due_date && t.due_date > tomorrow && t.due_date <= weekEnd && !t.done);
   const senare = tasks.filter((t: any) => t.due_date && t.due_date > weekEnd && !t.done);
-  const utanDatum = tasks.filter((t: any) => !t.due_date && t.recurrence === "none" && !t.done);
+  const utanDatum = tasks.filter((t: any) => !t.due_date && !t.done);
 
   async function moveToToday(t: any) {
     await updateTaskFn({ data: { id: t.id, patch: { due_date: day }, day } });
@@ -76,12 +76,12 @@ function PlannedPage() {
                 meta={[
                   humanDate(t.due_date, day),
                   shortTime(t.due_time),
-                  t.estimate_minutes ? `${t.estimate_minutes} min` : null,
-                  recurrenceLabel(t.recurrence, t.recurrence_days),
+                  priorityLabel(t.priority),
                   lists.find((l: any) => l.id === t.list_id)?.name ?? null,
                 ]
                   .filter(Boolean)
                   .join(" · ")}
+
                 trailing={
                   <button
                     type="button"
@@ -117,11 +117,10 @@ function PlannedPage() {
                 day: input.day,
                 dueTime: input.dueTime,
                 listId: input.listId,
-                estimateMinutes: input.estimateMinutes,
-                recurrence: input.recurrence,
-                recurrenceDays: input.recurrenceDays,
+                priority: input.priority,
               },
             });
+
             refresh();
           }}
         />

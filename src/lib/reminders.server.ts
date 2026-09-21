@@ -68,16 +68,10 @@ function inQuietHours(nowMinutes: number, start: string, end: string) {
   return s < e ? nowMinutes >= s && nowMinutes < e : nowMinutes >= s || nowMinutes < e;
 }
 
-function dueToday(
-  task: { due_date: string | null; recurrence: string; recurrence_days: number[] | null },
-  day: string,
-  weekday: number,
-) {
-  if (task.recurrence === "daily") return true;
-  if (task.recurrence === "weekdays") return weekday >= 1 && weekday <= 5;
-  if (task.recurrence === "weekly") return (task.recurrence_days ?? []).includes(weekday);
+function dueToday(task: { due_date: string | null }, day: string) {
   return task.due_date === day;
 }
+
 
 type Reminder = { kind: string; payload: PushPayload };
 
@@ -108,7 +102,7 @@ export async function runReminders(now = new Date()) {
       await Promise.all([
         db
           .from("tasks")
-          .select("id, title, due_date, due_time, recurrence, recurrence_days")
+          .select("id, title, due_date, due_time")
           .eq("user_id", userId)
           .eq("is_archived", false)
           .is("parent_id", null),
@@ -120,11 +114,12 @@ export async function runReminders(now = new Date()) {
 
     const doneTaskIds = new Set((taskDone ?? []).map((c: any) => c.task_id));
     const doneStepIds = new Set((stepDone ?? []).map((c: any) => c.step_id));
-    const todayTasks = (tasks ?? []).filter((t: any) => dueToday(t, day, weekday));
+    const todayTasks = (tasks ?? []).filter((t: any) => dueToday(t, day));
     const openTasks = todayTasks.filter((t: any) => !doneTaskIds.has(t.id));
     const missedTasks = (tasks ?? []).filter(
-      (t: any) => t.recurrence === "none" && t.due_date && t.due_date < day && !doneTaskIds.has(t.id),
+      (t: any) => t.due_date && t.due_date < day && !doneTaskIds.has(t.id),
     );
+
     const activeRoutines = (routines ?? []).filter((r: any) => (r.days ?? []).includes(weekday));
 
     const copy = toneCopy((settings.tone ?? "varm") as Tone);

@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { CalendarDays, Clock, Plus, Repeat, Timer } from "lucide-react";
+import { CalendarDays, Clock, Flag, Plus } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { addDays, humanDate, todayKey, WEEKDAY_LABELS } from "@/lib/day";
+import { addDays, humanDate, PRIORITIES, todayKey } from "@/lib/day";
 import { cn } from "@/lib/utils";
 
 export type NewTaskInput = {
@@ -12,9 +12,7 @@ export type NewTaskInput = {
   day: string | null;
   dueTime: string | null;
   listId: string | null;
-  estimateMinutes: number | null;
-  recurrence: "none" | "daily" | "weekdays" | "weekly";
-  recurrenceDays: number[];
+  priority: number;
 };
 
 type Props = {
@@ -25,8 +23,6 @@ type Props = {
   placeholder?: string;
   onCreate: (input: NewTaskInput) => Promise<void> | void;
 };
-
-const ESTIMATES = [2, 10, 30];
 
 function Chip({
   active,
@@ -57,9 +53,7 @@ export function TaskComposer({ lists, defaultDay = null, defaultListId = null, p
   const [day, setDay] = useState<string | null>(defaultDay);
   const [dueTime, setDueTime] = useState<string | null>(null);
   const [listId, setListId] = useState<string | null>(defaultListId);
-  const [estimate, setEstimate] = useState<number | null>(null);
-  const [recurrence, setRecurrence] = useState<NewTaskInput["recurrence"]>("none");
-  const [recurrenceDays, setRecurrenceDays] = useState<number[]>([]);
+  const [priority, setPriority] = useState(2);
   const [showMore, setShowMore] = useState(false);
 
   const open = title.trim().length > 0;
@@ -69,19 +63,9 @@ export function TaskComposer({ lists, defaultDay = null, defaultListId = null, p
     if (!t) return;
     setTitle("");
     setShowMore(false);
-    const payload: NewTaskInput = {
-      title: t,
-      day,
-      dueTime,
-      listId,
-      estimateMinutes: estimate,
-      recurrence,
-      recurrenceDays,
-    };
+    const payload: NewTaskInput = { title: t, day, dueTime, listId, priority };
     setDueTime(null);
-    setEstimate(null);
-    setRecurrence("none");
-    setRecurrenceDays([]);
+    setPriority(2);
     setDay(defaultDay);
     setListId(defaultListId);
     await onCreate(payload);
@@ -160,12 +144,12 @@ export function TaskComposer({ lists, defaultDay = null, defaultListId = null, p
           {showMore ? (
             <div className="space-y-2 rounded-2xl border border-border bg-card p-3">
               <p className="flex items-center gap-1.5 text-xs font-bold tracking-wide text-muted-foreground uppercase">
-                <Timer className="size-4" /> Hur lång tid
+                <Flag className="size-4" /> Prio
               </p>
               <div className="flex gap-2">
-                {ESTIMATES.map((m) => (
-                  <Chip key={m} active={estimate === m} onClick={() => setEstimate(estimate === m ? null : m)}>
-                    {m} min
+                {PRIORITIES.map((p) => (
+                  <Chip key={p.value} active={priority === p.value} onClick={() => setPriority(p.value)}>
+                    {p.label}
                   </Chip>
                 ))}
               </div>
@@ -184,49 +168,6 @@ export function TaskComposer({ lists, defaultDay = null, defaultListId = null, p
                     ))}
                   </div>
                 </>
-              ) : null}
-
-              <p className="flex items-center gap-1.5 pt-1 text-xs font-bold tracking-wide text-muted-foreground uppercase">
-                <Repeat className="size-4" /> Återkommer
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <Chip active={recurrence === "none"} onClick={() => setRecurrence("none")}>
-                  Nej
-                </Chip>
-                <Chip active={recurrence === "daily"} onClick={() => setRecurrence("daily")}>
-                  Varje dag
-                </Chip>
-                <Chip active={recurrence === "weekdays"} onClick={() => setRecurrence("weekdays")}>
-                  Vardagar
-                </Chip>
-                <Chip active={recurrence === "weekly"} onClick={() => setRecurrence("weekly")}>
-                  Veckodagar
-                </Chip>
-              </div>
-              {recurrence === "weekly" ? (
-                <div className="grid grid-cols-7 gap-1">
-                  {WEEKDAY_LABELS.map((label, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() =>
-                        setRecurrenceDays(
-                          recurrenceDays.includes(i)
-                            ? recurrenceDays.filter((d) => d !== i)
-                            : [...recurrenceDays, i].sort(),
-                        )
-                      }
-                      className={cn(
-                        "min-h-10 rounded-xl text-xs font-bold",
-                        recurrenceDays.includes(i)
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-secondary text-muted-foreground",
-                      )}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
               ) : null}
             </div>
           ) : null}
