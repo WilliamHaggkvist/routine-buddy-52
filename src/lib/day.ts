@@ -65,9 +65,14 @@ export function humanDate(dateKey: string | null | undefined, today: string = to
   return `${WEEKDAY_LABELS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
 }
 
-export function recurrenceLabel(recurrence: string, days: number[] | null | undefined): string | null {
-  if (recurrence === "daily") return "Varje dag";
-  if (recurrence === "weekdays") return "Vardagar";
-  if (recurrence === "weekly") return (days ?? []).map((d) => WEEKDAY_LABELS[d]).join(", ") || "Veckovis";
-  return null;
+export const PRIORITIES = [
+  { value: 1, label: "Prio 1" },
+  { value: 2, label: "Prio 2" },
+  { value: 3, label: "Prio 3" },
+];
+
+export function priorityLabel(priority: number | null | undefined): string {
+  const p = priority ?? 2;
+  return `Prio ${p}`;
 }
+
