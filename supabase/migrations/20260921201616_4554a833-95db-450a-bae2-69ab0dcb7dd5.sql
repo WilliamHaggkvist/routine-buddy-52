@@ -1,0 +1,2 @@
+ALTER TABLE public.tasks ADD COLUMN IF NOT EXISTS time_band text;
+ALTER TABLE public.tasks ADD CONSTRAINT tasks_time_band_check CHECK (time_band IS NULL OR time_band IN ('morgon','formiddag','eftermiddag','kvall'));
