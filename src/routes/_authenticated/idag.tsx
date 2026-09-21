@@ -13,7 +13,7 @@ import { TaskComposer } from "@/components/TaskComposer";
 import { TaskSheet } from "@/components/TaskSheet";
 import { useDashboard, useRefreshDashboard } from "@/hooks/useDashboard";
 import { createTask, getSettings, markNudgeRead, pushNudge, toggleStep, toggleTask, updateTask } from "@/lib/app.functions";
-import { greeting, humanDate, isSoon, last7Days, recurrenceLabel, shortTime, WEEKDAY_LABELS } from "@/lib/day";
+import { greeting, humanDate, isSoon, last7Days, priorityLabel, shortTime, WEEKDAY_LABELS } from "@/lib/day";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/idag")({
