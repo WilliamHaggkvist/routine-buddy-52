@@ -205,6 +205,9 @@ function MePage() {
         <Row label="Rutinpåminnelser" hint="15 min innan rutinens tidsfönster börjar">
           <Switch checked={!!s?.routine_reminders} onCheckedChange={(v) => patch({ routine_reminders: v })} />
         </Row>
+        <Row label="Uppgiftspåminnelser" hint="Notis vid uppgiftens klockslag eller tidsdel">
+          <Switch checked={s?.task_reminders !== false} onCheckedChange={(v) => patch({ task_reminders: v })} />
+        </Row>
         <Row label="Missat-puffar">
           <Switch checked={!!s?.missed_nudges} onCheckedChange={(v) => patch({ missed_nudges: v })} />
         </Row>

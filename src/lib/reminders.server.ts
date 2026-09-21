@@ -3,6 +3,19 @@
  * och skickar dem via push, e-post och in-app-notiser.
  */
 import { sendWebPush, type PushPayload, type PushSubscription } from "./web-push.server";
+import { TIME_BANDS } from "./day";
+
+/** Tidsdelens namn, t.ex. "Förmiddag" */
+function bandName(band: string | null | undefined): string | null {
+  return TIME_BANDS.find((b) => b.value === band)?.label ?? null;
+}
+
+/** Klockslaget en uppgift ska påminnas på (tidsdel räknas som sitt riktvärde) */
+function effectiveTime(task: { due_time?: string | null; time_band?: string | null }): string | null {
+  const band = TIME_BANDS.find((b) => b.value === task.time_band);
+  if (band) return band.time;
+  return task.due_time ? task.due_time.slice(0, 5) : null;
+}
 
 type Tone = "varm" | "peppig" | "rakt";
 
@@ -102,7 +115,7 @@ export async function runReminders(now = new Date()) {
       await Promise.all([
         db
           .from("tasks")
-          .select("id, title, due_date, due_time")
+          .select("id, title, due_date, due_time, time_band")
           .eq("user_id", userId)
           .eq("is_archived", false)
           .is("parent_id", null),
@@ -153,6 +166,30 @@ export async function runReminders(now = new Date()) {
         if (!justPassed(minutes, target, 20)) continue;
         const c = copy.routine(r.name);
         reminders.push({ kind: `routine:${r.id}`, payload: { ...c, url: "/idag", tag: `routine-${r.id}` } });
+      }
+    }
+
+    if (settings.task_reminders !== false) {
+      // Uppgifter med klockslag eller tidsdel: en notis per tidpunkt, alla uppgifter i samma notis.
+      const groups = new Map<string, { time: string; band: string | null; titles: string[] }>();
+      for (const t of openTasks as any[]) {
+        const time = effectiveTime(t);
+        if (!time) continue;
+        const key = t.time_band ? `band:${t.time_band}` : `time:${time}`;
+        const g = groups.get(key) ?? { time, band: (t.time_band ?? null) as string | null, titles: [] as string[] };
+        g.titles.push(t.title);
+        groups.set(key, g);
+      }
+      for (const [key, g] of groups) {
+        if (!justPassed(minutes, toMinutes(g.time), 15)) continue;
+        const label = bandName(g.band) ?? `kl ${g.time}`;
+        const n = g.titles.length;
+        const title = n === 1 ? g.titles[0]! : `${n} uppgifter · ${label}`;
+        const body =
+          n > 5
+            ? `Du har fler än 5 uppgifter att ta dig an på ${label.toLowerCase()}. Börja med en.`
+            : g.titles.join(" · ");
+        reminders.push({ kind: `tasks:${key}`, payload: { title, body, url: "/idag", tag: `tasks-${key}` } });
       }
     }
 

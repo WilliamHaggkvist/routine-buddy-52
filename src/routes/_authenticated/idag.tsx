@@ -200,7 +200,7 @@ function TodayPage() {
 
   return (
     <AppShell>
-      <LocalReminders settings={s} progress={progress} routines={routines} />
+      <LocalReminders settings={s} progress={progress} routines={routines} tasks={todayTasks} />
       <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
         <div className="min-w-0">
           <p className="text-sm text-muted-foreground">{greeting()}</p>

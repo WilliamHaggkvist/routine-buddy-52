@@ -89,6 +89,7 @@ export type Database = {
           quiet_end: string
           quiet_start: string
           routine_reminders: boolean
+          task_reminders: boolean
           tone: string
           updated_at: string
           user_id: string
@@ -104,6 +105,7 @@ export type Database = {
           quiet_end?: string
           quiet_start?: string
           routine_reminders?: boolean
+          task_reminders?: boolean
           tone?: string
           updated_at?: string
           user_id: string
@@ -119,6 +121,7 @@ export type Database = {
           quiet_end?: string
           quiet_start?: string
           routine_reminders?: boolean
+          task_reminders?: boolean
           tone?: string
           updated_at?: string
           user_id?: string
