@@ -107,14 +107,15 @@ export const getDashboard = createServerFn({ method: "POST" })
     const decorated = parents.map((t: any) => {
       const children = allTasks
         .filter((c: any) => c.parent_id === t.id)
-        .map((c: any) => ({ ...c, done: doneToday.has(c.id) || (c.recurrence === "none" && everDone.has(c.id)) }));
-      const done = doneToday.has(t.id) || (t.recurrence === "none" && !t.due_date && everDone.has(t.id)) || (t.recurrence === "none" && !!t.due_date && everDone.has(t.id));
+        .map((c: any) => ({ ...c, done: doneToday.has(c.id) || everDone.has(c.id) }));
+      const done = doneToday.has(t.id) || everDone.has(t.id);
       let bucket: "today" | "missed" | "later" | "backlog" = "backlog";
-      if (dueToday(t, day, weekday)) bucket = "today";
-      else if (t.recurrence === "none" && t.due_date && t.due_date < day && !everDone.has(t.id)) bucket = "missed";
-      else if (t.recurrence === "none" && t.due_date && t.due_date > day) bucket = "later";
+      if (dueToday(t, day)) bucket = "today";
+      else if (t.due_date && t.due_date < day && !everDone.has(t.id)) bucket = "missed";
+      else if (t.due_date && t.due_date > day) bucket = "later";
       return { ...t, children, done, bucket };
     });
+
 
     const stepDoneSet = new Set((stepDone ?? []).map((s: any) => s.step_id));
     const routineList = (routines ?? []).map((r: any) => {
