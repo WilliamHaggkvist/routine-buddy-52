@@ -122,8 +122,9 @@ export function TaskSheet({ task, lists, day, onClose, onChanged }: Props) {
               Klockslag
               <Input
                 type="time"
+                key={task.id}
                 defaultValue={task.due_time ? String(task.due_time).slice(0, 5) : ""}
-                onBlur={(e) => patch({ due_time: e.target.value || null })}
+                onChange={(e) => patch({ due_time: e.target.value || null })}
                 className="mt-1 h-12 w-full min-w-0 rounded-xl px-2 text-sm"
               />
             </label>
