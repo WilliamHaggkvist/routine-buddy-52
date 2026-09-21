@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { forwardRef, useState } from "react";
 import { CalendarDays, Clock, Flag, Plus } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
@@ -24,28 +24,24 @@ type Props = {
   onCreate: (input: NewTaskInput) => Promise<void> | void;
 };
 
-function Chip({
-  active,
-  children,
-  onClick,
-}: {
-  active?: boolean;
-  children: React.ReactNode;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-xl px-3 text-xs font-bold transition-colors",
-        active ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground",
-      )}
-    >
-      {children}
-    </button>
-  );
-}
+const Chip = forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement> & { active?: boolean }
+>(({ active, children, className, ...props }, ref) => (
+  <button
+    ref={ref}
+    type="button"
+    {...props}
+    className={cn(
+      "inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-xl px-3 text-xs font-bold transition-colors",
+      active ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground",
+      className,
+    )}
+  >
+    {children}
+  </button>
+));
+Chip.displayName = "Chip";
 
 export function TaskComposer({ lists, defaultDay = null, defaultListId = null, placeholder, onCreate }: Props) {
   const today = todayKey();
