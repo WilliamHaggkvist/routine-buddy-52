@@ -19,7 +19,6 @@ export type Database = {
           completed: boolean
           day: string
           id: string
-          points: number
           steps_done: number
           steps_total: number
           tasks_done: number
@@ -31,7 +30,6 @@ export type Database = {
           completed?: boolean
           day: string
           id?: string
-          points?: number
           steps_done?: number
           steps_total?: number
           tasks_done?: number
@@ -43,7 +41,6 @@ export type Database = {
           completed?: boolean
           day?: string
           id?: string
-          points?: number
           steps_done?: number
           steps_total?: number
           tasks_done?: number
@@ -82,8 +79,6 @@ export type Database = {
       }
       notification_settings: {
         Row: {
-          email_address: string | null
-          email_enabled: boolean
           evening_enabled: boolean
           evening_time: string
           inapp_enabled: boolean
@@ -99,8 +94,6 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          email_address?: string | null
-          email_enabled?: boolean
           evening_enabled?: boolean
           evening_time?: string
           inapp_enabled?: boolean
@@ -116,8 +109,6 @@ export type Database = {
           user_id: string
         }
         Update: {
-          email_address?: string | null
-          email_enabled?: boolean
           evening_enabled?: boolean
           evening_time?: string
           inapp_enabled?: boolean
@@ -170,7 +161,6 @@ export type Database = {
           display_name: string
           email: string | null
           id: string
-          points: number
           timezone: string
         }
         Insert: {
@@ -178,7 +168,6 @@ export type Database = {
           display_name?: string
           email?: string | null
           id: string
-          points?: number
           timezone?: string
         }
         Update: {
@@ -186,7 +175,6 @@ export type Database = {
           display_name?: string
           email?: string | null
           id?: string
-          points?: number
           timezone?: string
         }
         Relationships: []
