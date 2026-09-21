@@ -10,7 +10,7 @@ import { TaskComposer } from "@/components/TaskComposer";
 import { TaskSheet } from "@/components/TaskSheet";
 import { useDashboard, useRefreshDashboard } from "@/hooks/useDashboard";
 import { createTask, deleteList, deleteTask, saveList, toggleTask, updateTask } from "@/lib/app.functions";
-import { humanDate, recurrenceLabel, shortTime } from "@/lib/day";
+import { humanDate, priorityLabel, PRIORITIES, shortTime } from "@/lib/day";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -28,7 +28,6 @@ export const Route = createFileRoute("/_authenticated/listor")({
   component: ListsPage,
 });
 
-const ESTIMATES = [2, 10, 30];
 
 function ListsPage() {
   const { data, day } = useDashboard();
@@ -49,12 +48,20 @@ function ListsPage() {
   const tasks = (data?.tasks ?? []).filter((t: any) => !t.parent_id && (!t.done || t.bucket === "today"));
   const sheetTask = (data?.tasks ?? []).find((t: any) => t.id === sheetId) ?? null;
 
-  const visible = tasks.filter((t: any) => {
-    if (active === "inkorg" && t.list_id) return false;
-    if (active !== "alla" && active !== "inkorg" && t.list_id !== active) return false;
-    if (filter && (t.estimate_minutes ?? 999) > filter) return false;
-    return true;
-  });
+  const visible = tasks
+    .filter((t: any) => {
+      if (active === "inkorg" && t.list_id) return false;
+      if (active !== "alla" && active !== "inkorg" && t.list_id !== active) return false;
+      if (filter && (t.priority ?? 2) !== filter) return false;
+      return true;
+    })
+    .slice()
+    .sort(
+      (a: any, b: any) =>
+        (a.priority ?? 2) - (b.priority ?? 2) ||
+        `${a.due_date ?? "9999"}${a.due_time ?? ""}`.localeCompare(`${b.due_date ?? "9999"}${b.due_time ?? ""}`),
+    );
+
 
   return (
     <AppShell>
@@ -98,21 +105,22 @@ function ListsPage() {
       </div>
 
       <div className="mt-3 flex gap-2">
-        <span className="self-center text-xs font-bold tracking-wide text-muted-foreground uppercase">Orkar:</span>
-        {ESTIMATES.map((m) => (
+        <span className="self-center text-xs font-bold tracking-wide text-muted-foreground uppercase">Prio:</span>
+        {PRIORITIES.map((p) => (
           <button
-            key={m}
+            key={p.value}
             type="button"
-            onClick={() => setFilter(filter === m ? null : m)}
+            onClick={() => setFilter(filter === p.value ? null : p.value)}
             className={cn(
               "min-h-10 rounded-xl px-3 text-xs font-bold",
-              filter === m ? "bg-accent text-accent-foreground" : "bg-secondary text-secondary-foreground",
+              filter === p.value ? "bg-accent text-accent-foreground" : "bg-secondary text-secondary-foreground",
             )}
           >
-            ≤ {m} min
+            {p.label}
           </button>
         ))}
       </div>
+
 
       <div className="mt-4">
         <TaskComposer
@@ -127,11 +135,10 @@ function ListsPage() {
                 day: input.day,
                 dueTime: input.dueTime,
                 listId: input.listId,
-                estimateMinutes: input.estimateMinutes,
-                recurrence: input.recurrence,
-                recurrenceDays: input.recurrenceDays,
+                priority: input.priority,
               },
             });
+
             refresh();
           }}
         />
@@ -149,14 +156,14 @@ function ListsPage() {
             }}
             onOpen={() => setSheetId(t.id)}
             meta={[
+              priorityLabel(t.priority),
               humanDate(t.due_date, day),
               shortTime(t.due_time),
-              recurrenceLabel(t.recurrence, t.recurrence_days),
-              t.estimate_minutes ? `${t.estimate_minutes} min` : null,
               active === "alla" ? (lists.find((l: any) => l.id === t.list_id)?.name ?? "Inkorg") : null,
             ]
               .filter(Boolean)
               .join(" · ")}
+
             trailing={
               <div className="flex gap-1">
                 {t.due_date === day ? null : (
