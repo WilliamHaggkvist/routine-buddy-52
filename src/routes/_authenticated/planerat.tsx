@@ -76,12 +76,12 @@ function PlannedPage() {
                 meta={[
                   humanDate(t.due_date, day),
                   shortTime(t.due_time),
-                  t.estimate_minutes ? `${t.estimate_minutes} min` : null,
-                  recurrenceLabel(t.recurrence, t.recurrence_days),
+                  priorityLabel(t.priority),
                   lists.find((l: any) => l.id === t.list_id)?.name ?? null,
                 ]
                   .filter(Boolean)
                   .join(" · ")}
+
                 trailing={
                   <button
                     type="button"
