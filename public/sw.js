@@ -19,8 +19,8 @@ self.addEventListener("push", (event) => {
   const title = data.title || "Dagsform";
   const options = {
     body: data.body || "",
-    icon: "/favicon.ico",
-    badge: "/favicon.ico",
+    icon: "/__l5e/assets-v1/0635ec47-a3ce-44b7-963a-acd3fff88cd9/dagsform-icon.png",
+    badge: "/__l5e/assets-v1/0635ec47-a3ce-44b7-963a-acd3fff88cd9/dagsform-icon.png",
     tag: data.tag || "dagsform",
     renotify: true,
     data: { url: data.url || "/idag" },
