@@ -44,7 +44,7 @@ function PlannedPage() {
   const imorgon = tasks.filter((t: any) => t.due_date === tomorrow && !t.done);
   const veckan = tasks.filter((t: any) => t.due_date && t.due_date > tomorrow && t.due_date <= weekEnd && !t.done);
   const senare = tasks.filter((t: any) => t.due_date && t.due_date > weekEnd && !t.done);
-  const utanDatum = tasks.filter((t: any) => !t.due_date && t.recurrence === "none" && !t.done);
+  const utanDatum = tasks.filter((t: any) => !t.due_date && !t.done);
 
   async function moveToToday(t: any) {
     await updateTaskFn({ data: { id: t.id, patch: { due_date: day }, day } });
