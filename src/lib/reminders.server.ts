@@ -176,7 +176,7 @@ export async function runReminders(now = new Date()) {
         const time = effectiveTime(t);
         if (!time) continue;
         const key = t.time_band ? `band:${t.time_band}` : `time:${time}`;
-        const g = groups.get(key) ?? { time, band: t.time_band ?? null, titles: [] };
+        const g = groups.get(key) ?? { time, band: (t.time_band ?? null) as string | null, titles: [] as string[] };
         g.titles.push(t.title);
         groups.set(key, g);
       }
