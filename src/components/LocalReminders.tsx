@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { taskTime, TIME_BANDS, todayKey } from "@/lib/day";
+import appIcon from "@/assets/dagsform-icon.png.asset.json";
 
 type Settings = {
   push_enabled: boolean;
@@ -46,7 +47,7 @@ function fire(key: string, title: string, body: string) {
   if (localStorage.getItem(stamp)) return;
   localStorage.setItem(stamp, "1");
   if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-    new Notification(title, { body, tag: key });
+    new Notification(title, { body, tag: key, icon: appIcon.url, badge: appIcon.url });
   }
 }
 
