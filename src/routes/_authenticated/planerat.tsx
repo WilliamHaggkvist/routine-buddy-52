@@ -9,7 +9,7 @@ import { TaskComposer } from "@/components/TaskComposer";
 import { TaskSheet } from "@/components/TaskSheet";
 import { useDashboard, useRefreshDashboard } from "@/hooks/useDashboard";
 import { createTask, toggleTask, updateTask } from "@/lib/app.functions";
-import { addDays, humanDate, priorityLabel, shortTime } from "@/lib/day";
+import { addDays, humanDate, priorityLabel, taskTime, taskTimeLabel } from "@/lib/day";
 
 export const Route = createFileRoute("/_authenticated/planerat")({
   head: () => ({
@@ -62,7 +62,7 @@ function PlannedPage() {
         <div className="space-y-2">
           {items
             .slice()
-            .sort((a, b) => `${a.due_date ?? ""}${a.due_time ?? ""}`.localeCompare(`${b.due_date ?? ""}${b.due_time ?? ""}`))
+            .sort((a, b) => `${a.due_date ?? ""}${taskTime(a) ?? "99:99"}`.localeCompare(`${b.due_date ?? ""}${taskTime(b) ?? "99:99"}`))
             .map((t: any) => (
               <CheckRow
                 key={t.id}
@@ -75,7 +75,7 @@ function PlannedPage() {
                 onOpen={() => setSheetId(t.id)}
                 meta={[
                   humanDate(t.due_date, day),
-                  shortTime(t.due_time),
+                  taskTimeLabel(t),
                   priorityLabel(t.priority),
                   lists.find((l: any) => l.id === t.list_id)?.name ?? null,
                 ]
@@ -116,6 +116,7 @@ function PlannedPage() {
                 title: input.title,
                 day: input.day,
                 dueTime: input.dueTime,
+                timeBand: input.timeBand,
                 listId: input.listId,
                 priority: input.priority,
               },

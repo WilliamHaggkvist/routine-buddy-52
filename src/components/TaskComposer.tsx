@@ -4,13 +4,14 @@ import { CalendarDays, Clock, Flag, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { addDays, humanDate, PRIORITIES, todayKey } from "@/lib/day";
+import { addDays, humanDate, PRIORITIES, TIME_BANDS, todayKey, type TimeBand } from "@/lib/day";
 import { cn } from "@/lib/utils";
 
 export type NewTaskInput = {
   title: string;
   day: string | null;
   dueTime: string | null;
+  timeBand: TimeBand | null;
   listId: string | null;
   priority: number | null;
 };
@@ -48,6 +49,7 @@ export function TaskComposer({ lists, defaultDay = null, defaultListId = null, p
   const [title, setTitle] = useState("");
   const [day, setDay] = useState<string | null>(defaultDay);
   const [dueTime, setDueTime] = useState<string | null>(null);
+  const [timeBand, setTimeBand] = useState<TimeBand | null>(null);
   const [listId, setListId] = useState<string | null>(defaultListId);
   const [priority, setPriority] = useState<number | null>(null);
   const [showMore, setShowMore] = useState(false);
@@ -59,8 +61,9 @@ export function TaskComposer({ lists, defaultDay = null, defaultListId = null, p
     if (!t) return;
     setTitle("");
     setShowMore(false);
-    const payload: NewTaskInput = { title: t, day, dueTime, listId, priority };
+    const payload: NewTaskInput = { title: t, day, dueTime, timeBand, listId, priority };
     setDueTime(null);
+    setTimeBand(null);
     setPriority(null);
     setDay(defaultDay);
     setListId(defaultListId);
@@ -120,18 +123,34 @@ export function TaskComposer({ lists, defaultDay = null, defaultListId = null, p
             <label
               className={cn(
                 "inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-xl px-3 text-xs font-bold",
-                dueTime ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground",
+                dueTime && !timeBand ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground",
               )}
             >
               <Clock className="size-4" />
               <input
                 type="time"
-                value={dueTime ?? ""}
-                onChange={(e) => setDueTime(e.target.value || null)}
+                value={timeBand ? "" : (dueTime ?? "")}
+                onChange={(e) => {
+                  setTimeBand(null);
+                  setDueTime(e.target.value || null);
+                }}
                 className="w-[74px] bg-transparent text-xs font-bold outline-none"
                 aria-label="Klockslag"
               />
             </label>
+            {TIME_BANDS.map((b) => (
+              <Chip
+                key={b.value}
+                active={timeBand === b.value}
+                onClick={() => {
+                  const next = timeBand === b.value ? null : b.value;
+                  setTimeBand(next);
+                  setDueTime(null);
+                }}
+              >
+                {b.label}
+              </Chip>
+            ))}
             <Chip active={showMore} onClick={() => setShowMore(!showMore)}>
               Mer
             </Chip>

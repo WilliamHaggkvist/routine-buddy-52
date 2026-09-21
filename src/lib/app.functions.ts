@@ -200,6 +200,7 @@ export const createTask = createServerFn({ method: "POST" })
       title: string;
       day?: string | null;
       dueTime?: string | null;
+      timeBand?: string | null;
       listId?: string | null;
       parentId?: string | null;
       priority?: number | null;
@@ -209,6 +210,7 @@ export const createTask = createServerFn({ method: "POST" })
           title: z.string().min(1, "Skriv något först"),
           day: daySchema.nullable().optional(),
           dueTime: z.string().nullable().optional(),
+          timeBand: z.enum(["morgon", "formiddag", "eftermiddag", "kvall"]).nullable().optional(),
           listId: z.string().uuid().nullable().optional(),
           parentId: z.string().uuid().nullable().optional(),
           priority: z.number().min(1).max(3).nullable().optional(),
@@ -217,13 +219,20 @@ export const createTask = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const ctx = context as unknown as Ctx;
+    const bandTimes: Record<string, string> = {
+      morgon: "07:00",
+      formiddag: "10:00",
+      eftermiddag: "13:00",
+      kvall: "18:00",
+    };
     const { data: row, error } = await ctx.supabase
       .from("tasks")
       .insert({
         user_id: ctx.userId,
         title: data.title.trim(),
         due_date: data.day ?? null,
-        due_time: data.dueTime || null,
+        due_time: data.timeBand ? bandTimes[data.timeBand]! : data.dueTime || null,
+        time_band: data.timeBand ?? null,
         list_id: data.listId ?? null,
         parent_id: data.parentId ?? null,
         priority: data.priority ?? null,

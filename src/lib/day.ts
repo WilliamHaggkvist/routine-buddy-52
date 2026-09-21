@@ -92,3 +92,30 @@ export function priorityLabel(priority: number | null | undefined): string | nul
   return `Prio ${priority}`;
 }
 
+export const TIME_BANDS = [
+  { value: "morgon", label: "Morgon", time: "07:00" },
+  { value: "formiddag", label: "Förmiddag", time: "10:00" },
+  { value: "eftermiddag", label: "Eftermiddag", time: "13:00" },
+  { value: "kvall", label: "Kväll", time: "18:00" },
+] as const;
+
+export type TimeBand = (typeof TIME_BANDS)[number]["value"];
+
+export function bandTime(band: string | null | undefined): string | null {
+  return TIME_BANDS.find((b) => b.value === band)?.time ?? null;
+}
+
+export function bandLabel(band: string | null | undefined): string | null {
+  return TIME_BANDS.find((b) => b.value === band)?.label ?? null;
+}
+
+/** Klockslaget som används för sortering – tidsdel räknas som sitt riktvärde */
+export function taskTime(task: { due_time?: string | null; time_band?: string | null }): string | null {
+  return bandTime(task.time_band) ?? shortTime(task.due_time);
+}
+
+/** Läsbar tid: tidsdelens namn om sådan valts, annars klockslaget */
+export function taskTimeLabel(task: { due_time?: string | null; time_band?: string | null }): string | null {
+  return bandLabel(task.time_band) ?? shortTime(task.due_time);
+}
+

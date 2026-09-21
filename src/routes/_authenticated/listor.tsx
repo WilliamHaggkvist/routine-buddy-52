@@ -10,7 +10,7 @@ import { TaskComposer } from "@/components/TaskComposer";
 import { TaskSheet } from "@/components/TaskSheet";
 import { useDashboard, useRefreshDashboard } from "@/hooks/useDashboard";
 import { createTask, deleteList, deleteTask, saveList, toggleTask, updateTask } from "@/lib/app.functions";
-import { humanDate, priorityLabel, PRIORITIES, shortTime } from "@/lib/day";
+import { humanDate, priorityLabel, PRIORITIES, taskTime, taskTimeLabel } from "@/lib/day";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -59,7 +59,7 @@ function ListsPage() {
     .sort(
       (a: any, b: any) =>
         (a.priority ?? 9) - (b.priority ?? 9) ||
-        `${a.due_date ?? "9999"}${a.due_time ?? ""}`.localeCompare(`${b.due_date ?? "9999"}${b.due_time ?? ""}`),
+        `${a.due_date ?? "9999"}${taskTime(a) ?? "99:99"}`.localeCompare(`${b.due_date ?? "9999"}${taskTime(b) ?? "99:99"}`),
     );
 
 
@@ -134,6 +134,7 @@ function ListsPage() {
                 title: input.title,
                 day: input.day,
                 dueTime: input.dueTime,
+                timeBand: input.timeBand,
                 listId: input.listId,
                 priority: input.priority,
               },
@@ -158,7 +159,7 @@ function ListsPage() {
             meta={[
               priorityLabel(t.priority),
               humanDate(t.due_date, day),
-              shortTime(t.due_time),
+              taskTimeLabel(t),
               active === "alla" ? (lists.find((l: any) => l.id === t.list_id)?.name ?? "Inkorg") : null,
             ]
               .filter(Boolean)

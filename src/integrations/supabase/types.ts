@@ -399,6 +399,7 @@ export type Database = {
           recurrence: string
           recurrence_days: number[]
           sort_order: number
+          time_band: string | null
           title: string
           user_id: string
         }
@@ -416,6 +417,7 @@ export type Database = {
           recurrence?: string
           recurrence_days?: number[]
           sort_order?: number
+          time_band?: string | null
           title: string
           user_id?: string
         }
@@ -433,6 +435,7 @@ export type Database = {
           recurrence?: string
           recurrence_days?: number[]
           sort_order?: number
+          time_band?: string | null
           title?: string
           user_id?: string
         }
