@@ -202,9 +202,7 @@ export const createTask = createServerFn({ method: "POST" })
       dueTime?: string | null;
       listId?: string | null;
       parentId?: string | null;
-      recurrence?: string;
-      recurrenceDays?: number[];
-      estimateMinutes?: number | null;
+      priority?: number;
     }) =>
       z
         .object({
@@ -213,9 +211,7 @@ export const createTask = createServerFn({ method: "POST" })
           dueTime: z.string().nullable().optional(),
           listId: z.string().uuid().nullable().optional(),
           parentId: z.string().uuid().nullable().optional(),
-          recurrence: z.enum(["none", "daily", "weekdays", "weekly"]).optional(),
-          recurrenceDays: z.array(z.number().min(0).max(6)).optional(),
-          estimateMinutes: z.number().nullable().optional(),
+          priority: z.number().min(1).max(3).optional(),
         })
         .parse(input),
   )
@@ -230,12 +226,11 @@ export const createTask = createServerFn({ method: "POST" })
         due_time: data.dueTime || null,
         list_id: data.listId ?? null,
         parent_id: data.parentId ?? null,
-        recurrence: data.recurrence ?? "none",
-        recurrence_days: data.recurrenceDays ?? [],
-        estimate_minutes: data.estimateMinutes ?? null,
+        priority: data.priority ?? 2,
       })
       .select("id")
       .single();
+
     if (error) throw new Error(error.message);
     if (data.day) await recomputeDay(ctx, data.day);
     return row;
