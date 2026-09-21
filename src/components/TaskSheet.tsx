@@ -129,8 +129,8 @@ export function TaskSheet({ task, lists, day, onClose, onChanged }: Props) {
                 {PRIORITIES.map((p) => (
                   <Chip
                     key={p.value}
-                    active={(task.priority ?? 2) === p.value}
-                    onClick={() => patch({ priority: p.value })}
+                    active={task.priority === p.value}
+                    onClick={() => patch({ priority: task.priority === p.value ? null : p.value })}
                   >
                     {p.value}
                   </Chip>

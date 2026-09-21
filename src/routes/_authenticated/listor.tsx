@@ -52,13 +52,13 @@ function ListsPage() {
     .filter((t: any) => {
       if (active === "inkorg" && t.list_id) return false;
       if (active !== "alla" && active !== "inkorg" && t.list_id !== active) return false;
-      if (filter && (t.priority ?? 2) !== filter) return false;
+      if (filter && t.priority !== filter) return false;
       return true;
     })
     .slice()
     .sort(
       (a: any, b: any) =>
-        (a.priority ?? 2) - (b.priority ?? 2) ||
+        (a.priority ?? 9) - (b.priority ?? 9) ||
         `${a.due_date ?? "9999"}${a.due_time ?? ""}`.localeCompare(`${b.due_date ?? "9999"}${b.due_time ?? ""}`),
     );
 

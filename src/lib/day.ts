@@ -71,8 +71,8 @@ export const PRIORITIES = [
   { value: 3, label: "Prio 3" },
 ];
 
-export function priorityLabel(priority: number | null | undefined): string {
-  const p = priority ?? 2;
-  return `Prio ${p}`;
+export function priorityLabel(priority: number | null | undefined): string | null {
+  if (!priority) return null;
+  return `Prio ${priority}`;
 }
 
