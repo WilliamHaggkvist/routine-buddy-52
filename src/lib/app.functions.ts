@@ -248,7 +248,7 @@ export const createTask = createServerFn({ method: "POST" })
 export const updateTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { id: string; patch: Record<string, unknown>; day?: string }) =>
-    z.object({ id: z.string().uuid(), patch: z.record(z.any()), day: daySchema.optional() }).parse(input),
+    z.object({ id: z.string().uuid(), patch: z.record(z.string(), z.any()), day: daySchema.optional() }).parse(input),
   )
   .handler(async ({ data, context }) => {
     const ctx = context as unknown as Ctx;
@@ -418,7 +418,7 @@ export const getSettings = createServerFn({ method: "POST" })
 export const saveSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { patch: Record<string, unknown> }) =>
-    z.object({ patch: z.record(z.any()) }).parse(input),
+    z.object({ patch: z.record(z.string(), z.any()) }).parse(input),
   )
   .handler(async ({ data, context }) => {
     const ctx = context as unknown as Ctx;
