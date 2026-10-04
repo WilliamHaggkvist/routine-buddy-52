@@ -18,10 +18,12 @@ backend via Lovable Cloud (Supabase) i `src/integrations/supabase`.
    (Lovable skapar ett privat repo och håller det synkat), eller **Download
    codebase** som zip.
 2. **Klona och öppna mappen** i din IDE.
-3. **Installera beroenden** – `bun install` (låsfilen `bun.lock` finns med)
-   eller `npm install`.
-4. **Starta** – `npm run dev:local` (laddar `.env` och `.env.local` in i
-   processen innan Vite startar). Vanlig `npm run dev` ger bara webbläsarvari-
+3. **Installera beroenden** – `bun install`. Låsfilen `bun.lock` följer med
+   repot, så bun är det som rekommenderas. `npm install` fungerar också men
+   skriver en egen låsfil (`package-lock.json`) – håll dig till ett verktyg så
+   att du inte committar två låsfiler som kan hamna ur synk.
+4. **Starta** – `bun run dev:local` (laddar `.env` och `.env.local` in i
+   processen innan Vite startar). Vanlig `bun run dev` ger bara webbläsarvari-
    ablerna, då slutar inloggningen fungera.
 
 ### Värden som inte följer med repot
@@ -55,12 +57,20 @@ Lovable redigerar och synkar en gren i taget (oftast `main`).
 ## Kommandon
 
 ```sh
-npm run dev:local   # utvecklingsserver med alla värden laddade
-npm run dev         # bara webbläsarvariablerna (inloggning fungerar ej)
-npm run build       # produktionsbygge
-npm run lint        # eslint
-npm run format      # prettier
+bun install         # installera beroenden (bun.lock är låsfilen)
+bun run dev:local   # utvecklingsserver med alla värden laddade
+bun run dev         # bara webbläsarvariablerna (inloggning fungerar ej)
+bun run build       # produktionsbygge
+bun run lint        # eslint
+bun run format      # prettier
+bunx tsgo --noEmit  # kontrollera typfelen
 ```
+
+Allt ovan fungerar med `npm` i stället för `bun` (då `npx` i stället för
+`bunx`). `bunfig.toml` innehåller en leverantörskedjeregel: bun hoppar över
+paketversioner som släppts för mindre än ett dygn sedan. Behöver du en alldeles
+ny version, lägg till ett undantag i `minimumReleaseAgeExcludes` – säg till
+först, annars smyger sig den regeln bort.
 
 ## Lokalt testkonto
 

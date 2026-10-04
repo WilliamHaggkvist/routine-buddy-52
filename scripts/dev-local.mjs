@@ -2,7 +2,7 @@
 // into process.env, so server-side code (login, notifications) works the same
 // way it does when the app runs on Lovable.
 //
-// Usage: npm run dev:local   (or: node scripts/dev-local.mjs)
+// Usage: bun run dev:local   (or: node scripts/dev-local.mjs)
 // Pass --check to only verify that the env files parse, without starting Vite.
 
 import { existsSync, readFileSync } from "node:fs";

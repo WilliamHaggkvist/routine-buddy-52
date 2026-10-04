@@ -29,7 +29,7 @@ ADHD/autism. Non-negotiables:
   HTTP endpoints under `src/routes/api/public/*`.
 - Read secrets with `process.env['NAME']` inside handlers. Server-only values are
   injected by the platform; locally they come from `.env.local` via
-  `npm run dev:local`.
+  `bun run dev:local`.
 - Do not edit generated files: `src/integrations/supabase/*`, `.env`,
   `supabase/config.toml`.
 - Keep the request middleware in `src/start.ts` intact.
@@ -40,7 +40,9 @@ ADHD/autism. Non-negotiables:
 
 ## Verify before finishing
 
-- `bunx tsgo --noEmit` for types, `npm run build` for the bundle.
+- `bunx tsgo --noEmit` for types, `bun run build` for the bundle. Install with
+  `bun install` (`bun.lock` is the committed lockfile; `bunfig.toml`'s 24h
+  supply-chain guard must stay).
 - For UI/state behaviour, drive the running app with Playwright (viewport
   390×1400) instead of assuming.
 - Local runs hit the same live database — use throwaway accounts and clean up.
