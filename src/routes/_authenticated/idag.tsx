@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, Flame, Sunrise, X } from "lucide-react";
+import { ChevronDown, Flame } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/BottomNav";
@@ -12,7 +12,7 @@ import { ProgressRing } from "@/components/ProgressRing";
 import { TaskComposer } from "@/components/TaskComposer";
 import { TaskSheet } from "@/components/TaskSheet";
 import { useDashboard, useRefreshDashboard } from "@/hooks/useDashboard";
-import { createTask, getSettings, markNudgeRead, pushNudge, toggleStep, toggleTask, updateTask } from "@/lib/app.functions";
+import { createTask, getSettings, toggleStep, toggleTask, updateTask } from "@/lib/app.functions";
 import { currentWeekDays, greeting, humanDate, isSoon, priorityLabel, shortTime, taskTime, taskTimeLabel, WEEKDAY_LABELS_MON_SUN } from "@/lib/day";
 import { cn } from "@/lib/utils";
 
@@ -53,9 +53,7 @@ function TodayPage() {
   const toggleStepFn = useServerFn(toggleStep);
   const createTaskFn = useServerFn(createTask);
   const updateTaskFn = useServerFn(updateTask);
-  const markRead = useServerFn(markNudgeRead);
   const fetchSettings = useServerFn(getSettings);
-  const nudge = useServerFn(pushNudge);
   const settings = useQuery({
     queryKey: ["settings"],
     queryFn: () => fetchSettings({ data: undefined as never }),
@@ -116,21 +114,6 @@ function TodayPage() {
 
   const s = settings.data as any;
 
-  useEffect(() => {
-    if (!data || !s?.inapp_enabled || !s?.missed_nudges) return;
-    if (missade.length === 0) return;
-    const flag = `dagsform.missednudge.${day}`;
-    if (localStorage.getItem(flag)) return;
-    localStorage.setItem(flag, "1");
-    void nudge({
-      data: {
-        title: `${missade.length} sak${missade.length > 1 ? "er" : ""} ligger kvar`,
-        body: "Välj en att göra idag, eller släpp den. Båda är okej.",
-        kind: "missed",
-      },
-    }).then(() => refresh());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, s?.inapp_enabled, s?.missed_nudges, missade.length, day]);
 
   const progress = data?.progress ?? { done: 0, total: 0 };
   const complete = progress.total > 0 && progress.done >= progress.total;
@@ -257,33 +240,6 @@ function TodayPage() {
         </div>
       </div>
 
-      {(data?.notifications ?? []).length > 0 ? (
-        <div className="mt-4 space-y-2">
-          {(data?.notifications ?? []).map((n: any) => (
-            <div
-              key={n.id}
-              className="animate-rise grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border border-accent/50 bg-accent/25 px-3 py-3"
-            >
-              <Sunrise className="size-5 shrink-0 text-accent-foreground" />
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-foreground">{n.title}</p>
-                {n.body ? <p className="truncate text-xs text-muted-foreground">{n.body}</p> : null}
-              </div>
-              <button
-                type="button"
-                aria-label="Stäng"
-                className="grid size-9 shrink-0 place-items-center rounded-full bg-card"
-                onClick={async () => {
-                  await markRead({ data: { id: n.id } });
-                  refresh();
-                }}
-              >
-                <X className="size-4" />
-              </button>
-            </div>
-          ))}
-        </div>
-      ) : null}
 
       <div className="mt-5">
         <TaskComposer

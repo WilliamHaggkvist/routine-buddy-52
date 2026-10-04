@@ -85,7 +85,7 @@ export const getDashboard = createServerFn({ method: "POST" })
     const ctx = context as unknown as Ctx;
     const { day, weekday } = data;
 
-    const [{ data: profile }, { data: tasks }, { data: completions }, { data: routines }, { data: steps }, { data: stepDone }, { data: summaries }, { data: lists }, { data: notes }] =
+    const [{ data: profile }, { data: tasks }, { data: completions }, { data: routines }, { data: steps }, { data: stepDone }, { data: summaries }, { data: lists }] =
       await Promise.all([
         ctx.supabase.from("profiles").select("*").eq("id", ctx.userId).maybeSingle(),
         ctx.supabase.from("tasks").select("*").eq("is_archived", false).order("sort_order"),
@@ -95,7 +95,6 @@ export const getDashboard = createServerFn({ method: "POST" })
         ctx.supabase.from("routine_step_completions").select("step_id, completed_on").eq("completed_on", day),
         ctx.supabase.from("daily_summary").select("day, completed, tasks_done, tasks_total, steps_done, steps_total"),
         ctx.supabase.from("lists").select("*").order("sort_order"),
-        ctx.supabase.from("notifications").select("*").is("read_at", null).order("created_at", { ascending: false }).limit(5),
       ]);
 
     const allTasks = tasks ?? [];
@@ -142,7 +141,7 @@ export const getDashboard = createServerFn({ method: "POST" })
       routines: routineList,
       lists: lists ?? [],
       summaries: summaries ?? [],
-      notifications: notes ?? [],
+      notifications: [],
       progress: { done: doneTodayCount, total: totalToday },
       streak: streakFrom((summaries ?? []) as any, day),
     };

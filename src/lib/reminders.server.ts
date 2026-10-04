@@ -213,14 +213,6 @@ export async function runReminders(now = new Date()) {
       if (lockError) continue;
       result.sent += 1;
 
-      if (settings.inapp_enabled) {
-        await db.from("notifications").insert({
-          user_id: userId,
-          title: reminder.payload.title,
-          body: reminder.payload.body ?? null,
-          kind: reminder.kind.startsWith("routine") ? "routine" : reminder.kind,
-        });
-      }
 
       if (settings.push_enabled) {
         for (const sub of subs ?? []) {

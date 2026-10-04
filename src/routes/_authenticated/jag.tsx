@@ -33,12 +33,12 @@ export const Route = createFileRoute("/_authenticated/jag")({
 
 function Row({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border py-4 last:border-0">
-      <div className="min-w-0">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border py-4 last:border-0">
+      <div className="min-w-[140px] flex-1">
         <p className="text-[15px] font-semibold text-foreground">{label}</p>
         {hint ? <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p> : null}
       </div>
-      <div className="shrink-0">{children}</div>
+      <div className="flex shrink-0 items-center gap-2">{children}</div>
     </div>
   );
 }
@@ -181,9 +181,6 @@ function MePage() {
             </button>
           </Row>
         ) : null}
-        <Row label="Nudgar inne i appen" hint="Mjuka puffar när något ligger orört">
-          <Switch checked={!!s?.inapp_enabled} onCheckedChange={(v) => patch({ inapp_enabled: v })} />
-        </Row>
         <Row label="Morgonöversikt">
           <div className="flex items-center gap-2">
             <Input
@@ -229,29 +226,6 @@ function MePage() {
               onBlur={(e) => patch({ quiet_end: e.target.value })}
               className="h-12 w-24 rounded-xl"
             />
-          </div>
-        </Row>
-        <Row label="Ton">
-          <div className="flex gap-1">
-            {[
-              { id: "varm", label: "Varm" },
-              { id: "peppig", label: "Peppig" },
-              { id: "rakt", label: "Rakt" },
-            ].map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => patch({ tone: t.id })}
-                className={cn(
-                  "min-h-10 rounded-xl px-3 text-xs font-bold",
-                  (s?.tone ?? "varm") === t.id
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-secondary-foreground",
-                )}
-              >
-                {t.label}
-              </button>
-            ))}
           </div>
         </Row>
       </section>
