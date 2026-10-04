@@ -81,20 +81,30 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
 
+  function goNext() {
+    const next = new URLSearchParams(window.location.search).get("next");
+    if (next && next.startsWith("/") && !next.startsWith("//")) {
+      window.location.href = next;
+    } else {
+      navigate({ to: "/idag", replace: true });
+    }
+  }
+
   useEffect(() => {
     const stored = localStorage.getItem(EMAIL_KEY);
     setSavedEmail(stored);
     if (!stored) setMode("setup");
     void supabase.auth.getUser().then(({ data }) => {
-      if (data.user) navigate({ to: "/idag", replace: true });
+      if (data.user) goNext();
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
   async function applySession(tokens: { access_token: string; refresh_token: string }, mail: string) {
     const { error } = await supabase.auth.setSession(tokens);
     if (error) throw new Error("Kunde inte starta sessionen");
     localStorage.setItem(EMAIL_KEY, mail);
-    navigate({ to: "/idag", replace: true });
+    goNext();
   }
 
   async function handleUnlock(code: string) {

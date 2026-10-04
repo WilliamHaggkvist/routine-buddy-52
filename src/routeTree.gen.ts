@@ -12,11 +12,14 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as McpRouteImport } from './routes/mcp'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as AuthenticatedIdagRouteImport } from './routes/_authenticated/idag'
 import { Route as AuthenticatedJagRouteImport } from './routes/_authenticated/jag'
 import { Route as AuthenticatedListorRouteImport } from './routes/_authenticated/listor'
 import { Route as AuthenticatedPlaneratRouteImport } from './routes/_authenticated/planerat'
 import { Route as AuthenticatedRutinerRouteImport } from './routes/_authenticated/rutiner'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as ApiPublicRemindersRouteImport } from './routes/api/public/reminders'
 
 const IndexRoute = IndexRouteImport.update({
@@ -33,6 +36,17 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedIdagRoute = AuthenticatedIdagRouteImport.update({
   id: '/idag',
   path: '/idag',
@@ -58,6 +72,11 @@ const AuthenticatedRutinerRoute = AuthenticatedRutinerRouteImport.update({
   path: '/rutiner',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicRemindersRoute = ApiPublicRemindersRouteImport.update({
   id: '/api/public/reminders',
   path: '/api/public/reminders',
@@ -67,21 +86,27 @@ const ApiPublicRemindersRoute = ApiPublicRemindersRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/mcp': typeof McpRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/idag': typeof AuthenticatedIdagRoute
   '/jag': typeof AuthenticatedJagRoute
   '/listor': typeof AuthenticatedListorRoute
   '/planerat': typeof AuthenticatedPlaneratRoute
   '/rutiner': typeof AuthenticatedRutinerRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/api/public/reminders': typeof ApiPublicRemindersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/mcp': typeof McpRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/idag': typeof AuthenticatedIdagRoute
   '/jag': typeof AuthenticatedJagRoute
   '/listor': typeof AuthenticatedListorRoute
   '/planerat': typeof AuthenticatedPlaneratRoute
   '/rutiner': typeof AuthenticatedRutinerRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/api/public/reminders': typeof ApiPublicRemindersRoute
 }
 export interface FileRoutesById {
@@ -89,11 +114,14 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/mcp': typeof McpRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/idag': typeof AuthenticatedIdagRoute
   '/_authenticated/jag': typeof AuthenticatedJagRoute
   '/_authenticated/listor': typeof AuthenticatedListorRoute
   '/_authenticated/planerat': typeof AuthenticatedPlaneratRoute
   '/_authenticated/rutiner': typeof AuthenticatedRutinerRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/api/public/reminders': typeof ApiPublicRemindersRoute
 }
 export interface FileRouteTypes {
@@ -101,32 +129,41 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/mcp'
+    | '/.well-known/oauth-protected-resource'
     | '/idag'
     | '/jag'
     | '/listor'
     | '/planerat'
     | '/rutiner'
+    | '/.lovable/oauth/consent'
     | '/api/public/reminders'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/mcp'
+    | '/.well-known/oauth-protected-resource'
     | '/idag'
     | '/jag'
     | '/listor'
     | '/planerat'
     | '/rutiner'
+    | '/.lovable/oauth/consent'
     | '/api/public/reminders'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/mcp'
+    | '/.well-known/oauth-protected-resource'
     | '/_authenticated/idag'
     | '/_authenticated/jag'
     | '/_authenticated/listor'
     | '/_authenticated/planerat'
     | '/_authenticated/rutiner'
+    | '/.lovable/oauth/consent'
     | '/api/public/reminders'
   fileRoutesById: FileRoutesById
 }
@@ -134,6 +171,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  McpRoute: typeof McpRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   ApiPublicRemindersRoute: typeof ApiPublicRemindersRoute
 }
 
@@ -158,6 +198,20 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/idag': {
@@ -195,6 +249,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRutinerRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/reminders': {
       id: '/api/public/reminders'
       path: '/api/public/reminders'
@@ -228,6 +289,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  McpRoute: McpRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   ApiPublicRemindersRoute: ApiPublicRemindersRoute,
 }
 export const routeTree = rootRouteImport

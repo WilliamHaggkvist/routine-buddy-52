@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import appIcon from "@/assets/dagsform-icon.png.asset.json";
 
 export const Route = createFileRoute("/_authenticated/jag")({
   head: () => ({
@@ -129,7 +130,10 @@ function MePage() {
 
   return (
     <AppShell>
-      <h1 className="font-display text-2xl text-foreground">Jag</h1>
+      <div className="flex items-center gap-3">
+        <img src={appIcon.url} alt="Dagsforms profilbild" className="size-14 object-contain" />
+        <h1 className="font-display text-2xl text-foreground">Jag</h1>
+      </div>
 
       <div className="mt-4">
         <div className="rounded-3xl border border-border bg-card p-4">
