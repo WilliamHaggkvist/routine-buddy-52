@@ -61,3 +61,14 @@ npm run build       # produktionsbygge
 npm run lint        # eslint
 npm run format      # prettier
 ```
+
+## Lokalt testkonto
+
+Lokalt saknas den hemliga PIN-pepparn, så dina vanliga konton går inte att logga in med där.
+Använd i stället utvecklingskontot (lämna `PIN_PEPPER` tom i `.env.local`):
+
+- E-post: `lokal@dagsform.dev`
+- PIN: `1234`
+
+Kontot ligger i samma databas som appen, men syns bara för den som loggar in med det.
+Det går **inte** att logga in med det i den publicerade appen (där används den riktiga pepparn).
